@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "me.wesley1808.fastrtp.mixins",
+  "compatibilityLevel": "JAVA_16",
+  "mixins": [
+    "ServerChunkCacheAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

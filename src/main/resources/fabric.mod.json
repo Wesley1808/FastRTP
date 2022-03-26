@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "fast-rtp",
+  "version": "${version}",
+  "name": "FastRTP",
+  "description": "A fast random teleport command that doesn't cause lagspikes.",
+  "authors": [
+    "Wesley1808"
+  ],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "me.wesley1808.fastrtp.FastRTP"
+    ]
+  },
+  "mixins": [
+    "fast-rtp.mixins.json"
+  ],
+  "depends": {
+    "fabric": ">=0.47.0",
+    "minecraft": "^1.18.2",
+    "fabricloader": ">=0.13.3"
+  }
+}
