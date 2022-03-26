@@ -90,7 +90,7 @@ public final class RandomTeleportCommand {
         CooldownManager.addCooldown(player);
 
         PositionLocator locator = new PositionLocator(level, radius, minRadius);
-        locator.findPosition().thenAcceptAsync((pos) -> {
+        locator.findPosition((pos) -> {
             if (pos != null) {
                 player.teleportTo(level, pos.x, pos.y, pos.z, player.getYRot(), player.getXRot());
                 player.connection.resetPosition();

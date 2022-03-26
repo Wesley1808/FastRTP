@@ -1,5 +1,6 @@
 package me.wesley1808.fastrtp.util;
 
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -20,17 +21,27 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Comparator;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.locks.LockSupport;
+import java.util.function.Consumer;
 
 public final class PositionLocator {
+    private static final ObjectOpenHashSet<PositionLocator> LOCATORS = new ObjectOpenHashSet<>();
     private static final TicketType<ChunkPos> LOCATE = TicketType.create("locate", Comparator.comparingLong(ChunkPos::toLong), 200);
     private static final Random RANDOM = new Random();
     private final ServerLevel level;
     private final int radius;
     private final int minRadius;
     private final int maxY;
+    private Consumer<Vec3> callback;
+    private ChunkPos queuedPos;
     private long stopTime;
+    private int centerX;
+    private int centerZ;
+
+    public static void update() {
+        for (PositionLocator locator : LOCATORS) {
+            locator.tick();
+        }
+    }
 
     public PositionLocator(ServerLevel level, int radius, int minRadius) {
         this.level = level;
@@ -39,62 +50,74 @@ public final class PositionLocator {
         this.minRadius = minRadius >> 4;
     }
 
-    public CompletableFuture<Vec3> findPosition() {
-        this.stopTime = System.currentTimeMillis() + 10000;
-        return CompletableFuture.supplyAsync(this::newPosition);
+    public void tick() {
+        if (System.currentTimeMillis() <= this.stopTime) {
+            LevelChunk chunk = Util.getChunkIfLoaded(this.level, this.queuedPos.x, this.queuedPos.z);
+            if (chunk != null) {
+                this.onChunkLoaded(chunk);
+            }
+        } else {
+            this.onChunkLoaded(null);
+        }
     }
 
-    private Vec3 newPosition() {
+    public void findPosition(Consumer<Vec3> callback) {
+        this.callback = callback;
+        this.stopTime = System.currentTimeMillis() + 10000;
+        this.newPosition();
+    }
+
+    private void newPosition() {
         if (System.currentTimeMillis() > this.stopTime) {
-            return null;
+            this.callback.accept(null);
+            return;
         }
 
         ChunkPos chunkPos = RANDOM.nextBoolean()
                 ? new ChunkPos(this.nextRandomValueWithMinimum(), this.nextRandomValue())
                 : new ChunkPos(this.nextRandomValue(), this.nextRandomValueWithMinimum());
 
-        int x = chunkPos.getMiddleBlockX();
-        int z = chunkPos.getMiddleBlockZ();
-        BlockPos pos = new BlockPos(x, 128, z);
-        if (!this.isValid(pos)) {
-            return this.newPosition();
-        }
+        this.centerX = chunkPos.getMiddleBlockX();
+        this.centerZ = chunkPos.getMiddleBlockZ();
 
-        LevelChunk chunk = this.getChunk(chunkPos);
-        if (chunk == null) {
-            return null;
-        }
-
-        return this.findSafePositionIn(chunk, pos);
-    }
-
-    private Vec3 findSafePositionIn(ChunkAccess chunk, BlockPos pos) {
-        final double centerX = pos.getX();
-        final double centerZ = pos.getZ();
-        double x = centerX;
-        double z = centerZ;
-        int y = this.getY(chunk, x, z);
-        int attempts = 30;
-
-        while (--attempts > 0 && !this.isSafe(chunk, x, y, z)) {
-            x = Mth.nextDouble(RANDOM, centerX - 5, centerX + 5);
-            z = Mth.nextDouble(RANDOM, centerZ - 5, centerZ + 5);
-            y = this.getY(chunk, x, z);
-        }
-
-        if (attempts > 0) {
-            return new Vec3(Mth.floor(x) + 0.5D, y, Mth.floor(z) + 0.5D);
+        if (this.isValid(new BlockPos(this.centerX, 128, this.centerZ))) {
+            this.queueChunk(chunkPos);
         } else {
-            return this.newPosition();
+            this.newPosition();
         }
     }
 
-    /**
-     * Checks if the position is safe to teleport to.
-     *
-     * @param chunk: The chunk to check in
-     * @return Boolean: if the position is safe.
-     */
+    private void queueChunk(ChunkPos pos) {
+        this.level.getChunkSource().addRegionTicket(LOCATE, pos, 0, pos);
+        this.queuedPos = pos;
+        LOCATORS.add(this);
+    }
+
+    private void onChunkLoaded(LevelChunk chunk) {
+        LOCATORS.remove(this);
+
+        if (chunk == null) {
+            this.callback.accept(null);
+            return;
+        }
+
+        this.findSafePositionIn(chunk, this.centerX, this.centerZ);
+    }
+
+    private void findSafePositionIn(LevelChunk chunk, final int centerX, final int centerZ) {
+        for (int x = centerX - 6; x <= centerX + 5; x++) {
+            for (int z = centerZ - 6; z <= centerZ + 5; z++) {
+                int y = this.getY(chunk, x, z);
+                if (this.isSafe(chunk, x, y, z)) {
+                    this.callback.accept(new Vec3(Mth.floor(x) + 0.5D, y, Mth.floor(z) + 0.5D));
+                    return;
+                }
+            }
+        }
+
+        this.newPosition();
+    }
+
     private boolean isSafe(ChunkAccess chunk, double x, int y, double z) {
         BlockPos pos = new BlockPos(x, y - 1, z);
         Material material = chunk.getBlockState(pos).getMaterial();
@@ -104,9 +127,6 @@ public final class PositionLocator {
                 && this.level.noCollision(EntityType.PLAYER.getAABB(Mth.floor(x) + 0.5D, y, Mth.floor(z) + 0.5D));
     }
 
-    /**
-     * Quick checks to skip a lot of expensive chunk loading.
-     */
     private boolean isValid(BlockPos pos) {
         if (this.level.getWorldBorder().isWithinBounds(pos)) {
             return this.isBiomeValid(this.level.getBiome(pos));
@@ -124,21 +144,6 @@ public final class PositionLocator {
                 && key != Biomes.THE_END
                 && key != Biomes.SMALL_END_ISLANDS
                 && key != Biomes.THE_VOID;
-    }
-
-    private LevelChunk getChunk(ChunkPos pos) {
-        LevelChunk chunk = Util.getChunkIfLoaded(this.level, pos.x, pos.z);
-        if (chunk != null) {
-            return chunk;
-        }
-
-        this.level.getChunkSource().addRegionTicket(LOCATE, pos, 1, pos);
-        while (chunk == null && System.currentTimeMillis() <= this.stopTime) {
-            LockSupport.parkNanos("Waiting for chunk", 250000000L); // 250ms
-            chunk = Util.getChunkIfLoaded(this.level, pos.x, pos.z);
-        }
-
-        return chunk;
     }
 
     private int nextRandomValue() {
