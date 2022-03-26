@@ -13,6 +13,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -28,14 +29,17 @@ public final class PositionLocator {
     private static final TicketType<ChunkPos> LOCATE = TicketType.create("locate", Comparator.comparingLong(ChunkPos::toLong), 200);
     private static final Random RANDOM = new Random();
     private final ServerLevel level;
-    private final int radius;
     private final int minRadius;
+    private final int radius;
     private final int maxY;
+    private final int centerX;
+    private final int centerZ;
     private Consumer<Vec3> callback;
     private ChunkPos queuedPos;
     private long stopTime;
-    private int centerX;
-    private int centerZ;
+    private int attempts;
+    private int x;
+    private int z;
 
     public static void update() {
         for (PositionLocator locator : LOCATORS) {
@@ -48,9 +52,13 @@ public final class PositionLocator {
         this.maxY = level.getLogicalHeight();
         this.radius = radius >> 4;
         this.minRadius = minRadius >> 4;
+
+        WorldBorder border = this.level.getWorldBorder();
+        this.centerX = (int) border.getCenterX() >> 4;
+        this.centerZ = (int) border.getCenterZ() >> 4;
     }
 
-    public void tick() {
+    private void tick() {
         if (System.currentTimeMillis() <= this.stopTime) {
             LevelChunk chunk = Util.getChunkIfLoaded(this.level, this.queuedPos.x, this.queuedPos.z);
             if (chunk != null) {
@@ -68,19 +76,19 @@ public final class PositionLocator {
     }
 
     private void newPosition() {
-        if (System.currentTimeMillis() > this.stopTime) {
+        if (++this.attempts > 256 || System.currentTimeMillis() > this.stopTime) {
             this.callback.accept(null);
             return;
         }
 
         ChunkPos chunkPos = RANDOM.nextBoolean()
-                ? new ChunkPos(this.nextRandomValueWithMinimum(), this.nextRandomValue())
-                : new ChunkPos(this.nextRandomValue(), this.nextRandomValueWithMinimum());
+                ? new ChunkPos(this.nextRandomValueWithMinimum(this.centerX), this.nextRandomValue(this.centerZ))
+                : new ChunkPos(this.nextRandomValue(this.centerX), this.nextRandomValueWithMinimum(this.centerZ));
 
-        this.centerX = chunkPos.getMiddleBlockX();
-        this.centerZ = chunkPos.getMiddleBlockZ();
+        this.x = chunkPos.getMiddleBlockX();
+        this.z = chunkPos.getMiddleBlockZ();
 
-        if (this.isValid(new BlockPos(this.centerX, 128, this.centerZ))) {
+        if (this.isValid(new BlockPos(this.x, 128, this.z))) {
             this.queueChunk(chunkPos);
         } else {
             this.newPosition();
@@ -101,10 +109,10 @@ public final class PositionLocator {
             return;
         }
 
-        this.findSafePositionIn(chunk, this.centerX, this.centerZ);
+        this.findSafePositionInChunk(chunk, this.x, this.z);
     }
 
-    private void findSafePositionIn(LevelChunk chunk, final int centerX, final int centerZ) {
+    private void findSafePositionInChunk(LevelChunk chunk, final int centerX, final int centerZ) {
         for (int x = centerX - 6; x <= centerX + 5; x++) {
             for (int z = centerZ - 6; z <= centerZ + 5; z++) {
                 int y = this.getY(chunk, x, z);
@@ -146,13 +154,14 @@ public final class PositionLocator {
                 && key != Biomes.THE_VOID;
     }
 
-    private int nextRandomValue() {
-        return Mth.nextInt(RANDOM, -this.radius, this.radius);
+    private int nextRandomValue(int center) {
+        return Mth.nextInt(RANDOM, center - this.radius, center + this.radius);
     }
 
-    private int nextRandomValueWithMinimum() {
-        return RANDOM.nextBoolean() ? Mth.nextInt(RANDOM, this.minRadius, this.radius) : Mth.nextInt(RANDOM, -this.radius, -this.minRadius);
+    private int nextRandomValueWithMinimum(int center) {
+        return RANDOM.nextBoolean() ? Mth.nextInt(RANDOM, center + this.minRadius, center + this.radius) : Mth.nextInt(RANDOM, center - this.minRadius, center - this.radius);
     }
+
 
     private int getY(ChunkAccess chunk, double x, double z) {
         return chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int) x, (int) z) + 1;

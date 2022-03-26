@@ -56,7 +56,7 @@ public final class Util {
     }
 
     public static int getRadius(ServerLevel level) {
-        final int borderRadius = (int) (level.getWorldBorder().getSize() / 2) - 128;
+        final int borderRadius = (int) (level.getWorldBorder().getSize() / 2) - 16;
         final int radius = Config.instance().radius;
         if (radius < 0) {
             return borderRadius;
