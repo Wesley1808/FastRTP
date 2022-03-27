@@ -81,15 +81,16 @@ public final class PositionLocator {
             return;
         }
 
-        ChunkPos chunkPos = RANDOM.nextBoolean()
+        ChunkPos pos = RANDOM.nextBoolean()
                 ? new ChunkPos(this.nextRandomValueWithMinimum(this.centerX), this.nextRandomValue(this.centerZ))
                 : new ChunkPos(this.nextRandomValue(this.centerX), this.nextRandomValueWithMinimum(this.centerZ));
 
-        this.x = chunkPos.getMiddleBlockX();
-        this.z = chunkPos.getMiddleBlockZ();
+        this.x = pos.getMiddleBlockX();
+        this.z = pos.getMiddleBlockZ();
 
-        if (this.isValid(new BlockPos(this.x, 128, this.z))) {
-            this.queueChunk(chunkPos);
+        // Quick checks to skip a lot of unnecessary chunk loading.
+        if (this.isValid(pos)) {
+            this.queueChunk(pos);
         } else {
             this.newPosition();
         }
@@ -129,15 +130,14 @@ public final class PositionLocator {
     private boolean isSafe(ChunkAccess chunk, double x, int y, double z) {
         BlockPos pos = new BlockPos(x, y - 1, z);
         Material material = chunk.getBlockState(pos).getMaterial();
-
-        return pos.getY() <= this.maxY
-                && !material.isLiquid() && material != Material.FIRE && material != Material.BAMBOO && material != Material.CACTUS
+        return pos.getY() <= this.maxY && (material.blocksMotion() || material == Material.TOP_SNOW)
+                && material != Material.BAMBOO && material != Material.CACTUS
                 && this.level.noCollision(EntityType.PLAYER.getAABB(Mth.floor(x) + 0.5D, y, Mth.floor(z) + 0.5D));
     }
 
-    private boolean isValid(BlockPos pos) {
+    private boolean isValid(ChunkPos pos) {
         if (this.level.getWorldBorder().isWithinBounds(pos)) {
-            return this.isBiomeValid(this.level.getBiome(pos));
+            return this.isBiomeValid(this.level.getBiome(new BlockPos(this.x, 128, this.z)));
         }
         return false;
     }
