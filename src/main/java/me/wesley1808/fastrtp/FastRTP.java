@@ -1,7 +1,6 @@
 package me.wesley1808.fastrtp;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.logging.LogUtils;
 import me.wesley1808.fastrtp.commands.RandomTeleportCommand;
 import me.wesley1808.fastrtp.config.ConfigHandler;
 import me.wesley1808.fastrtp.util.PositionLocator;
@@ -12,11 +11,12 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.ServerResources;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FastRTP implements ModInitializer {
-    public static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LoggerFactory.getLogger("FastRTP");
     public static MinecraftServer server;
 
     @Override
@@ -36,7 +36,7 @@ public class FastRTP implements ModInitializer {
         RandomTeleportCommand.register(dispatcher);
     }
 
-    private void onReload(MinecraftServer server, ResourceManager manager, boolean success) {
+    private void onReload(MinecraftServer server, ServerResources resources, boolean success) {
         ConfigHandler.load();
     }
 

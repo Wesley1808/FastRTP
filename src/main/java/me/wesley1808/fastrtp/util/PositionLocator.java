@@ -2,12 +2,10 @@ package me.wesley1808.fastrtp.util;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
-import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
@@ -142,13 +140,13 @@ public final class PositionLocator {
         return false;
     }
 
-    private boolean isBiomeValid(Holder<Biome> biome) {
-        ResourceKey<Biome> key = this.level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY).getResourceKey(biome.value()).orElse(null);
+    private boolean isBiomeValid(Biome biome) {
+        Biome.BiomeCategory category = biome.getBiomeCategory();
+        ResourceKey<Biome> key = this.level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY).getResourceKey(biome).orElse(null);
         return key != null
-                && !biome.is(BiomeTags.IS_BEACH)
-                && !biome.is(BiomeTags.IS_OCEAN)
-                && !biome.is(BiomeTags.IS_DEEP_OCEAN)
-                && !biome.is(BiomeTags.IS_RIVER)
+                && category != Biome.BiomeCategory.BEACH
+                && category != Biome.BiomeCategory.OCEAN
+                && category != Biome.BiomeCategory.RIVER
                 && key != Biomes.THE_END
                 && key != Biomes.SMALL_END_ISLANDS
                 && key != Biomes.THE_VOID;
