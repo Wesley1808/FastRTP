@@ -159,9 +159,8 @@ public final class PositionLocator {
     }
 
     private int nextRandomValueWithMinimum(int center) {
-        return RANDOM.nextBoolean() ? Mth.nextInt(RANDOM, center + this.minRadius, center + this.radius) : Mth.nextInt(RANDOM, center - this.minRadius, center - this.radius);
+        return RANDOM.nextBoolean() ? Mth.nextInt(RANDOM, center + this.minRadius, center + this.radius) : Mth.nextInt(RANDOM, center - this.radius, center - this.minRadius);
     }
-
 
     private int getY(ChunkAccess chunk, double x, double z) {
         return chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int) x, (int) z) + 1;
