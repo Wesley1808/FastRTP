@@ -138,7 +138,7 @@ public final class PositionLocator {
             return false;
         }
 
-        int radius = Config.instance().safetyCheckRadius;
+        int radius = Math.min(Config.instance().safetyCheckRadius, 2);
         if (radius > 0) {
             for (double x = centerX - radius; x <= centerX + radius; x++) {
                 for (double z = centerZ - radius; z <= centerZ + radius; z++) {
