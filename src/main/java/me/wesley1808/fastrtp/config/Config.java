@@ -7,6 +7,7 @@ public class Config {
     public String defaultDimension = "minecraft:overworld";
     public int radius = -1;
     public int minRadius = 0;
+    public int safetyCheckRadius = 1;
     public int cooldown = 60;
 
     public String messageRtpFail = "&cCould not find a safe location!";
