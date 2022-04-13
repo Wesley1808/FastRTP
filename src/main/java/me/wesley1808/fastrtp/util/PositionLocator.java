@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
@@ -24,7 +25,6 @@ import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Comparator;
-import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -33,7 +33,7 @@ public final class PositionLocator {
     private static final Predicate<BlockState> SURROUNDING_BLOCK_PREDICATE = (state) -> state.getMaterial() != Material.FIRE && !state.is(Blocks.LAVA) && !state.is(Blocks.POWDER_SNOW) && !state.is(Blocks.MAGMA_BLOCK);
     private static final ObjectOpenHashSet<PositionLocator> LOCATORS = new ObjectOpenHashSet<>();
     private static final TicketType<ChunkPos> LOCATE = TicketType.create("locate", Comparator.comparingLong(ChunkPos::toLong), 200);
-    private static final Random RANDOM = new Random();
+    private static final RandomSource RANDOM = RandomSource.create();
     private final ServerLevel level;
     private final int minRadius;
     private final int radius;
