@@ -4,7 +4,8 @@ import me.wesley1808.fastrtp.FastRTP;
 import me.wesley1808.fastrtp.config.Config;
 import me.wesley1808.fastrtp.mixins.ServerChunkCacheAccessor;
 import net.minecraft.core.Registry;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ChunkHolder;
@@ -32,14 +33,14 @@ public final class Util {
 
     // Outdated message formatting method.
     // Will be used until there's a better solution that consistently works in snapshots.
-    public static TextComponent format(String string) {
+    public static MutableComponent format(String string) {
         var builder = new StringBuilder(string);
         for (int index = builder.indexOf("&"); index >= 0; index = builder.indexOf("&", index + 1)) {
             if (matches(builder.charAt(index + 1))) {
                 builder.setCharAt(index, '§');
             }
         }
-        return new TextComponent(builder.toString());
+        return Component.literal(builder.toString());
     }
 
     private static boolean matches(Character c) {

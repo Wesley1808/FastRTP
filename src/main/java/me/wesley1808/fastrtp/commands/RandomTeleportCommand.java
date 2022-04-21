@@ -10,7 +10,7 @@ import me.wesley1808.fastrtp.util.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
@@ -76,7 +76,7 @@ public final class RandomTeleportCommand {
 
     private static int execute(CommandSourceStack source, ServerPlayer player, ServerLevel level, int radius, int minRadius) {
         if (minRadius > radius) {
-            source.sendFailure(new TextComponent("Minimum radius cannot be larger than radius!"));
+            source.sendFailure(Component.literal("Minimum radius cannot be larger than radius!"));
             return 0;
         }
 
@@ -114,7 +114,7 @@ public final class RandomTeleportCommand {
     private static int executeBack(ServerPlayer player) {
         UUID uuid = player.getUUID();
         if (!Scheduler.canSchedule(uuid)) {
-            player.displayClientMessage(new TextComponent("Please wait before using this command again!").withStyle(ChatFormatting.RED), false);
+            player.displayClientMessage(Component.literal("Please wait before using this command again!").withStyle(ChatFormatting.RED), false);
             return 0;
         }
 
