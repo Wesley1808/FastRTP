@@ -32,6 +32,7 @@ public final class PositionLocator {
     private static final Predicate<BlockState> BELOW_PLAYER_PREDICATE = (state) -> (state.getMaterial().blocksMotion() || state.is(Blocks.SNOW)) && !state.is(Blocks.BAMBOO) && !state.is(Blocks.CACTUS) && !state.is(Blocks.MAGMA_BLOCK);
     private static final Predicate<BlockState> SURROUNDING_BLOCK_PREDICATE = (state) -> state.getMaterial() != Material.FIRE && !state.is(Blocks.LAVA) && !state.is(Blocks.POWDER_SNOW) && !state.is(Blocks.MAGMA_BLOCK);
     private static final ObjectOpenHashSet<PositionLocator> LOCATORS = new ObjectOpenHashSet<>();
+    private static final ObjectOpenHashSet<PositionLocator> PENDING_REMOVAL = new ObjectOpenHashSet<>();
     private static final TicketType<ChunkPos> LOCATE = TicketType.create("locate", Comparator.comparingLong(ChunkPos::toLong), 200);
     private static final RandomSource RANDOM = RandomSource.create();
     private final ServerLevel level;
@@ -50,6 +51,12 @@ public final class PositionLocator {
         for (PositionLocator locator : LOCATORS) {
             locator.tick();
         }
+
+        for (PositionLocator remove : PENDING_REMOVAL) {
+            LOCATORS.remove(remove);
+        }
+
+        PENDING_REMOVAL.clear();
     }
 
     public PositionLocator(ServerLevel level, int radius, int minRadius) {
@@ -107,7 +114,7 @@ public final class PositionLocator {
     }
 
     private void onChunkLoaded(LevelChunk chunk) {
-        LOCATORS.remove(this);
+        PENDING_REMOVAL.add(this);
 
         if (chunk == null) {
             this.callback.accept(null);
