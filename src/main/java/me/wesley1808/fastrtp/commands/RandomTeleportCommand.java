@@ -103,7 +103,7 @@ public final class RandomTeleportCommand {
                         .replace("#WORLD", level.dimension().location().getPath())
                 ), false);
             } else {
-                player.displayClientMessage(Util.format(Config.instance().messageRtpFail), false);
+                player.sendSystemMessage(Util.format(Config.instance().messageRtpFail));
                 CooldownManager.removeCooldown(player.getUUID());
             }
         });
@@ -114,13 +114,13 @@ public final class RandomTeleportCommand {
     private static int executeBack(ServerPlayer player) {
         UUID uuid = player.getUUID();
         if (!Scheduler.canSchedule(uuid)) {
-            player.displayClientMessage(Component.literal("Please wait before using this command again!").withStyle(ChatFormatting.RED), false);
+            player.sendSystemMessage(Component.literal("Please wait before using this command again!").withStyle(ChatFormatting.RED));
             return 0;
         }
 
         Pair<ServerLevel, Vec3> pair = RTP_COORDS.get(uuid);
         if (pair == null) {
-            player.displayClientMessage(Util.format(Config.instance().messageRtpBackFail), false);
+            player.sendSystemMessage(Util.format(Config.instance().messageRtpBackFail));
             return 0;
         }
 
