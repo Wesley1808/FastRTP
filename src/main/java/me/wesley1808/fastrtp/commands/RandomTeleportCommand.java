@@ -96,12 +96,12 @@ public final class RandomTeleportCommand {
                 player.connection.resetPosition();
                 RTP_COORDS.put(player.getUUID(), new ObjectObjectImmutablePair<>(level, pos));
 
-                player.displayClientMessage(Util.format(Config.instance().messageRtpSuccess
+                player.sendSystemMessage(Util.format(Config.instance().messageRtpSuccess
                         .replace("#X", String.format("%.0f", pos.x))
                         .replace("#Y", String.format("%.0f", pos.y))
                         .replace("#Z", String.format("%.0f", pos.z))
                         .replace("#WORLD", level.dimension().location().getPath())
-                ), false);
+                ));
             } else {
                 player.sendSystemMessage(Util.format(Config.instance().messageRtpFail));
                 CooldownManager.removeCooldown(player.getUUID());
@@ -131,7 +131,7 @@ public final class RandomTeleportCommand {
         Scheduler.scheduleTeleport(player, () -> {
             player.teleportTo(level, pos.x, pos.y, pos.z, player.getYRot(), player.getXRot());
             player.connection.resetPosition();
-            player.displayClientMessage(Util.format(Config.instance().messageRtpBackSuccess), false);
+            player.sendSystemMessage(Util.format(Config.instance().messageRtpBackSuccess));
             RTP_COORDS.remove(uuid);
         });
 
