@@ -52,8 +52,8 @@ public final class PositionLocator {
             locator.tick();
         }
 
-        for (PositionLocator remove : PENDING_REMOVAL) {
-            LOCATORS.remove(remove);
+        for (PositionLocator toRemove : PENDING_REMOVAL) {
+            LOCATORS.remove(toRemove);
         }
 
         PENDING_REMOVAL.clear();
@@ -121,21 +121,26 @@ public final class PositionLocator {
             return;
         }
 
-        this.findSafePositionInChunk(chunk, this.x, this.z);
+        Vec3 pos = this.findSafePositionInChunk(chunk, this.x, this.z);
+        if (pos != null) {
+            this.callback.accept(pos);
+            return;
+        }
+
+        this.newPosition();
     }
 
-    private void findSafePositionInChunk(LevelChunk chunk, final int centerX, final int centerZ) {
+    private Vec3 findSafePositionInChunk(LevelChunk chunk, final int centerX, final int centerZ) {
         for (int x = centerX - 6; x <= centerX + 5; x++) {
             for (int z = centerZ - 6; z <= centerZ + 5; z++) {
                 int y = this.getY(chunk, x, z);
                 if (this.isSafe(chunk, x, y, z)) {
-                    this.callback.accept(new Vec3(Mth.floor(x) + 0.5D, y + 1, Mth.floor(z) + 0.5D));
-                    return;
+                    return new Vec3(Mth.floor(x) + 0.5D, y + 1, Mth.floor(z) + 0.5D);
                 }
             }
         }
 
-        this.newPosition();
+        return null;
     }
 
     private boolean isSafe(LevelChunk chunk, double centerX, int y, double centerZ) {

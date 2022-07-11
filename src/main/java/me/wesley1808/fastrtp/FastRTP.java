@@ -7,10 +7,12 @@ import me.wesley1808.fastrtp.config.ConfigHandler;
 import me.wesley1808.fastrtp.util.PositionLocator;
 import me.wesley1808.fastrtp.util.Scheduler;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.slf4j.Logger;
@@ -32,7 +34,7 @@ public class FastRTP implements ModInitializer {
         PositionLocator.update();
     }
 
-    private void onRegisterCommands(CommandDispatcher<CommandSourceStack> dispatcher, boolean dedicated) {
+    private void onRegisterCommands(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess, Commands.CommandSelection environment) {
         RandomTeleportCommand.register(dispatcher);
     }
 
