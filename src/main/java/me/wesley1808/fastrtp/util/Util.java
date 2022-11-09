@@ -3,7 +3,7 @@ package me.wesley1808.fastrtp.util;
 import me.wesley1808.fastrtp.FastRTP;
 import me.wesley1808.fastrtp.config.Config;
 import me.wesley1808.fastrtp.mixins.ServerChunkCacheAccessor;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
@@ -53,7 +53,7 @@ public final class Util {
             return player.getLevel();
         }
 
-        return FastRTP.server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, location));
+        return FastRTP.server.getLevel(ResourceKey.create(Registries.DIMENSION, location));
     }
 
     public static int getRadius(ServerLevel level) {
