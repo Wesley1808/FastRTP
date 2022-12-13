@@ -80,6 +80,11 @@ public final class RandomTeleportCommand {
             return 0;
         }
 
+        if (PositionLocator.isLocating(player)) {
+            // If the player is already locating a random position, don't start a new one.
+            return 0;
+        }
+
         if (CooldownManager.hasCooldown(player.getUUID())) {
             String seconds = String.valueOf(CooldownManager.getCooldownInSeconds(player.getUUID()));
             player.displayClientMessage(Util.format(Config.instance().messageOnCooldown.replace("#SECONDS", seconds)), false);
@@ -89,7 +94,7 @@ public final class RandomTeleportCommand {
         player.displayClientMessage(Util.format(Config.instance().messageRtpSearching), true);
         CooldownManager.addCooldown(player);
 
-        PositionLocator locator = new PositionLocator(level, radius, minRadius);
+        PositionLocator locator = new PositionLocator(level, player.getUUID(), radius, minRadius);
         locator.findPosition((pos) -> {
             if (pos != null) {
                 player.teleportTo(level, pos.x, pos.y, pos.z, player.getYRot(), player.getXRot());

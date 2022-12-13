@@ -1,5 +1,6 @@
 package me.wesley1808.fastrtp.util;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import me.wesley1808.fastrtp.config.Config;
 import net.minecraft.core.BlockPos;
@@ -8,6 +9,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.Mth;
@@ -25,17 +27,19 @@ import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Comparator;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public final class PositionLocator {
     private static final Predicate<BlockState> BELOW_PLAYER_PREDICATE = (state) -> (state.getMaterial().blocksMotion() || state.is(Blocks.SNOW)) && !state.is(Blocks.BAMBOO) && !state.is(Blocks.CACTUS) && !state.is(Blocks.MAGMA_BLOCK);
     private static final Predicate<BlockState> SURROUNDING_BLOCK_PREDICATE = (state) -> state.getMaterial() != Material.FIRE && !state.is(Blocks.LAVA) && !state.is(Blocks.POWDER_SNOW) && !state.is(Blocks.MAGMA_BLOCK);
-    private static final ObjectOpenHashSet<PositionLocator> LOCATORS = new ObjectOpenHashSet<>();
-    private static final ObjectOpenHashSet<PositionLocator> PENDING_REMOVAL = new ObjectOpenHashSet<>();
+    private static final Object2ObjectOpenHashMap<UUID, PositionLocator> LOCATORS = new Object2ObjectOpenHashMap<>();
+    private static final ObjectOpenHashSet<UUID> PENDING_REMOVAL = new ObjectOpenHashSet<>();
     private static final TicketType<ChunkPos> LOCATE = TicketType.create("locate", Comparator.comparingLong(ChunkPos::toLong), 200);
     private static final RandomSource RANDOM = RandomSource.create();
     private final ServerLevel level;
+    private final UUID uuid;
     private final int minRadius;
     private final int radius;
     private final int centerX;
@@ -47,20 +51,25 @@ public final class PositionLocator {
     private int x;
     private int z;
 
+    public static boolean isLocating(ServerPlayer player) {
+        return LOCATORS.containsKey(player.getUUID());
+    }
+
     public static void update() {
-        for (PositionLocator locator : LOCATORS) {
+        for (PositionLocator locator : LOCATORS.values()) {
             locator.tick();
         }
 
-        for (PositionLocator toRemove : PENDING_REMOVAL) {
-            LOCATORS.remove(toRemove);
+        for (UUID uuid : PENDING_REMOVAL) {
+            LOCATORS.remove(uuid);
         }
 
         PENDING_REMOVAL.clear();
     }
 
-    public PositionLocator(ServerLevel level, int radius, int minRadius) {
+    public PositionLocator(ServerLevel level, UUID uuid, int radius, int minRadius) {
         this.level = level;
+        this.uuid = uuid;
         this.radius = radius >> 4;
         this.minRadius = minRadius >> 4;
 
@@ -110,11 +119,12 @@ public final class PositionLocator {
     private void queueChunk(ChunkPos pos) {
         this.level.getChunkSource().addRegionTicket(LOCATE, pos, 0, pos);
         this.queuedPos = pos;
-        LOCATORS.add(this);
+        PENDING_REMOVAL.remove(this.uuid);
+        LOCATORS.put(this.uuid, this);
     }
 
     private void onChunkLoaded(LevelChunk chunk) {
-        PENDING_REMOVAL.add(this);
+        PENDING_REMOVAL.add(this.uuid);
 
         if (chunk == null) {
             this.callback.accept(null);
