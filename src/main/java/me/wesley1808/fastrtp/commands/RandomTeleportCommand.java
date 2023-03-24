@@ -137,7 +137,6 @@ public final class RandomTeleportCommand {
             player.teleportTo(level, pos.x, pos.y, pos.z, player.getYRot(), player.getXRot());
             player.connection.resetPosition();
             player.sendSystemMessage(Util.format(Config.instance().messageRtpBackSuccess));
-            RTP_COORDS.remove(uuid);
         });
 
         return 1;
