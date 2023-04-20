@@ -32,7 +32,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public final class PositionLocator {
-    private static final Predicate<BlockState> BELOW_PLAYER_PREDICATE = (state) -> (state.getMaterial().blocksMotion() || state.is(Blocks.SNOW)) && !state.is(Blocks.BAMBOO) && !state.is(Blocks.CACTUS) && !state.is(Blocks.MAGMA_BLOCK);
+    private static final Predicate<BlockState> BELOW_PLAYER_PREDICATE = (state) -> (state.blocksMotion() || state.is(Blocks.SNOW)) && !state.is(Blocks.BAMBOO) && !state.is(Blocks.CACTUS) && !state.is(Blocks.MAGMA_BLOCK);
     private static final Predicate<BlockState> SURROUNDING_BLOCK_PREDICATE = (state) -> !state.is(BlockTags.FIRE) && !state.is(Blocks.LAVA) && !state.is(Blocks.POWDER_SNOW) && !state.is(Blocks.MAGMA_BLOCK);
     private static final Object2ObjectOpenHashMap<UUID, PositionLocator> LOCATORS = new Object2ObjectOpenHashMap<>();
     private static final ObjectOpenHashSet<UUID> PENDING_REMOVAL = new ObjectOpenHashSet<>();
@@ -205,13 +205,13 @@ public final class PositionLocator {
     private boolean isBiomeValid(Holder<Biome> biome) {
         ResourceKey<Biome> key = this.level.registryAccess().registryOrThrow(Registries.BIOME).getResourceKey(biome.value()).orElse(null);
         return key != null
-                && !biome.is(BiomeTags.IS_BEACH)
-                && !biome.is(BiomeTags.IS_OCEAN)
-                && !biome.is(BiomeTags.IS_DEEP_OCEAN)
-                && !biome.is(BiomeTags.IS_RIVER)
-                && key != Biomes.THE_END
-                && key != Biomes.SMALL_END_ISLANDS
-                && key != Biomes.THE_VOID;
+               && !biome.is(BiomeTags.IS_BEACH)
+               && !biome.is(BiomeTags.IS_OCEAN)
+               && !biome.is(BiomeTags.IS_DEEP_OCEAN)
+               && !biome.is(BiomeTags.IS_RIVER)
+               && key != Biomes.THE_END
+               && key != Biomes.SMALL_END_ISLANDS
+               && key != Biomes.THE_VOID;
     }
 
     private int nextRandomValue(int center) {
