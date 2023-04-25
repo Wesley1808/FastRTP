@@ -96,7 +96,7 @@ public final class RandomTeleportCommand {
 
         PositionLocator locator = new PositionLocator(level, player.getUUID(), radius, minRadius);
         locator.findPosition((pos) -> {
-            if (pos != null) {
+            if (pos != null && player.isAlive()) {
                 player.teleportTo(level, pos.x, pos.y, pos.z, player.getYRot(), player.getXRot());
                 player.connection.resetPosition();
                 RTP_COORDS.put(player.getUUID(), new ObjectObjectImmutablePair<>(level, pos));
