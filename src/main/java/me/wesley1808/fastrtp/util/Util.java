@@ -50,7 +50,7 @@ public final class Util {
     public static ServerLevel getLevel(ServerPlayer player) {
         ResourceLocation location;
         if (Config.instance().useCurrentWorld || (location = ResourceLocation.tryParse(Config.instance().defaultDimension)) == null) {
-            return player.getLevel();
+            return player.serverLevel();
         }
 
         return FastRTP.server.getLevel(ResourceKey.create(Registries.DIMENSION, location));
