@@ -26,21 +26,16 @@ public final class Scheduler {
         SCHEDULER.shutdown();
     }
 
-    public static void scheduleTeleport(ServerPlayer player, Runnable runnable) {
+    public static void scheduleTeleport(ServerPlayer player, Runnable onSuccess, Runnable onFail) {
         ACTIVE.add(player.getUUID());
-        teleportLoop(3, player.getUUID(), player.position(), runnable);
+        teleportLoop(3, player.getUUID(), player.position(), onSuccess, onFail);
     }
 
-    private static void teleportLoop(int seconds, UUID uuid, Vec3 oldPos, Runnable runnable) {
+    private static void teleportLoop(int seconds, UUID uuid, Vec3 oldPos, Runnable onSuccess, Runnable onFail) {
         ServerPlayer player = FastRTP.server.getPlayerList().getPlayer(uuid);
-        if (player == null) {
+        if (player == null || !player.position().closerThan(oldPos, 2)) {
             ACTIVE.remove(uuid);
-            return;
-        }
-
-        if (!player.position().closerThan(oldPos, 2)) {
-            ACTIVE.remove(uuid);
-            player.displayClientMessage(Util.format(Config.instance().messageTpCancelled), false);
+            onFail.run();
             return;
         }
 
@@ -51,11 +46,11 @@ public final class Scheduler {
 
         if (seconds == 1) {
             schedule(1000, () -> {
-                runnable.run();
+                onSuccess.run();
                 ACTIVE.remove(uuid);
             });
         } else {
-            schedule(1000, () -> teleportLoop(seconds - 1, uuid, oldPos, runnable));
+            schedule(1000, () -> teleportLoop(seconds - 1, uuid, oldPos, onSuccess, onFail));
         }
     }
 }

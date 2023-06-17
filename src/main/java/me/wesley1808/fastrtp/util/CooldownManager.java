@@ -17,7 +17,7 @@ public final class CooldownManager {
         long time = COOLDOWNS.getLong(uuid);
         if (time == 0L) return false;
 
-        if (System.currentTimeMillis() > time) {
+        if (System.currentTimeMillis() > time - 1000) {
             COOLDOWNS.removeLong(uuid);
             return false;
         }
