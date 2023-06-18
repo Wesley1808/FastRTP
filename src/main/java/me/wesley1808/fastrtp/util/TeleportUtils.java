@@ -1,5 +1,6 @@
 package me.wesley1808.fastrtp.util;
 
+import me.wesley1808.fastrtp.config.Config;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
@@ -15,7 +16,7 @@ import java.util.List;
 public class TeleportUtils {
     @Nullable
     public static String mayTeleport(ServerPlayer player) {
-        if (player.gameMode.isSurvival()) {
+        if (player.gameMode.isSurvival() && Config.instance().useStrictTeleportCheck) {
             if (player.hasEffect(MobEffects.LEVITATION)) {
                 return "Levitation Effect";
             }

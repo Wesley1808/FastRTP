@@ -1,11 +1,13 @@
 package me.wesley1808.fastrtp.commands;
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectObjectImmutablePair;
 import me.wesley1808.fastrtp.config.Config;
+import me.wesley1808.fastrtp.config.ConfigHandler;
 import me.wesley1808.fastrtp.util.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -36,6 +38,11 @@ public final class RandomTeleportCommand {
         dispatcher.register(literal("rtp")
                 .requires(src -> !Config.instance().requirePermission || PermissionManager.hasPermission(src, "fast-rtp.command.root", 2))
                 .executes(ctx -> execute(ctx.getSource()))
+
+                .then(literal("reload")
+                        .requires(src -> PermissionManager.hasPermission(src, "fast-rtp.command.reload", 2))
+                        .executes(ctx -> reloadConfig(ctx.getSource()))
+                )
 
                 .then(argument("player", player())
                         .requires(src -> PermissionManager.hasPermission(src, "fast-rtp.command.advanced", 2))
@@ -91,7 +98,7 @@ public final class RandomTeleportCommand {
 
         if (!force && CooldownManager.hasCooldown(player.getUUID())) {
             String seconds = String.valueOf(CooldownManager.getCooldownInSeconds(player.getUUID()));
-            player.displayClientMessage(Util.format(Config.instance().messageOnCooldown.replace("#SECONDS", seconds)), false);
+            player.displayClientMessage(Util.format(Config.instance().messageOnCooldown.replace("${seconds}", seconds)), false);
             return 0;
         }
 
@@ -104,13 +111,18 @@ public final class RandomTeleportCommand {
         player.displayClientMessage(Util.format(Config.instance().messageRtpSearching), true);
         CooldownManager.addCooldown(player);
 
+        long startTime = System.currentTimeMillis();
         PositionLocator locator = new PositionLocator(level, player.getUUID(), radius, minRadius);
         locator.findPosition((pos) -> {
             if (pos != null) {
                 if (force) {
                     teleportPlayer(player, level, pos);
                 } else {
-                    player.displayClientMessage(Util.format(Config.instance().messageRtpFound), true);
+                    long elapsedTime = System.currentTimeMillis() - startTime;
+                    player.displayClientMessage(Util.format(Config.instance().messageRtpFound
+                            .replace("${seconds}", String.format("%.1f", elapsedTime / 1000F))
+                    ), true);
+
                     Scheduler.scheduleTeleport(player, () -> {
                         teleportPlayer(player, level, pos);
                     }, () -> {
@@ -133,10 +145,10 @@ public final class RandomTeleportCommand {
             RTP_COORDS.put(player.getUUID(), new ObjectObjectImmutablePair<>(level, pos));
 
             player.sendSystemMessage(Util.format(Config.instance().messageRtpSuccess
-                    .replace("#X", String.format("%.0f", pos.x))
-                    .replace("#Y", String.format("%.0f", pos.y))
-                    .replace("#Z", String.format("%.0f", pos.z))
-                    .replace("#WORLD", level.dimension().location().getPath())
+                    .replace("${x}", String.format("%.0f", pos.x))
+                    .replace("${y}", String.format("%.0f", pos.y))
+                    .replace("${z}", String.format("%.0f", pos.z))
+                    .replace("${world}", level.dimension().location().getPath())
             ));
         }
     }
@@ -173,5 +185,11 @@ public final class RandomTeleportCommand {
         });
 
         return 1;
+    }
+
+    private static int reloadConfig(CommandSourceStack source) {
+        ConfigHandler.load();
+        source.sendSuccess(() -> Component.literal("Config reloaded!").withStyle(ChatFormatting.GREEN), false);
+        return Command.SINGLE_SUCCESS;
     }
 }

@@ -1,8 +1,8 @@
 package me.wesley1808.fastrtp.util;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import me.wesley1808.fastrtp.FastRTP;
 import me.wesley1808.fastrtp.config.Config;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 
@@ -28,11 +28,11 @@ public final class Scheduler {
 
     public static void scheduleTeleport(ServerPlayer player, Runnable onSuccess, Runnable onFail) {
         ACTIVE.add(player.getUUID());
-        teleportLoop(3, player.getUUID(), player.position(), onSuccess, onFail);
+        teleportLoop(3, player.server, player.getUUID(), player.position(), onSuccess, onFail);
     }
 
-    private static void teleportLoop(int seconds, UUID uuid, Vec3 oldPos, Runnable onSuccess, Runnable onFail) {
-        ServerPlayer player = FastRTP.server.getPlayerList().getPlayer(uuid);
+    private static void teleportLoop(int seconds, MinecraftServer server, UUID uuid, Vec3 oldPos, Runnable onSuccess, Runnable onFail) {
+        ServerPlayer player = server.getPlayerList().getPlayer(uuid);
         if (player == null || !player.position().closerThan(oldPos, 2)) {
             ACTIVE.remove(uuid);
             onFail.run();
@@ -40,7 +40,7 @@ public final class Scheduler {
         }
 
         player.displayClientMessage(Util.format(Config.instance().messageTpSecondsLeft
-                .replace("#SECONDS", String.valueOf(seconds))
+                .replace("${seconds}", String.valueOf(seconds))
                 .replace("seconds", seconds == 1 ? "second" : "seconds")
         ), false);
 
@@ -50,7 +50,7 @@ public final class Scheduler {
                 ACTIVE.remove(uuid);
             });
         } else {
-            schedule(1000, () -> teleportLoop(seconds - 1, uuid, oldPos, onSuccess, onFail));
+            schedule(1000, () -> teleportLoop(seconds - 1, server, uuid, oldPos, onSuccess, onFail));
         }
     }
 }

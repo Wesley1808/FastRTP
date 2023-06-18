@@ -1,6 +1,5 @@
 package me.wesley1808.fastrtp.util;
 
-import me.wesley1808.fastrtp.FastRTP;
 import me.wesley1808.fastrtp.config.Config;
 import me.wesley1808.fastrtp.mixins.ServerChunkCacheAccessor;
 import net.minecraft.core.registries.Registries;
@@ -53,7 +52,7 @@ public final class Util {
             return player.serverLevel();
         }
 
-        return FastRTP.server.getLevel(ResourceKey.create(Registries.DIMENSION, location));
+        return player.server.getLevel(ResourceKey.create(Registries.DIMENSION, location));
     }
 
     public static int getRadius(ServerLevel level) {

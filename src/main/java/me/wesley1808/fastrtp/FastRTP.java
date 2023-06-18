@@ -14,20 +14,19 @@ import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.packs.resources.ResourceManager;
 import org.slf4j.Logger;
 
 public class FastRTP implements ModInitializer {
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static MinecraftServer server;
 
     @Override
     public void onInitialize() {
         CommandRegistrationCallback.EVENT.register(this::onRegisterCommands);
-        ServerLifecycleEvents.END_DATA_PACK_RELOAD.register(this::onReload);
-        ServerLifecycleEvents.SERVER_STARTED.register(this::onServerStarted);
         ServerLifecycleEvents.SERVER_STOPPED.register(this::onServerStopped);
         ServerTickEvents.END_SERVER_TICK.register(this::onTick);
+
+        ConfigHandler.load();
+        ConfigHandler.save();
     }
 
     private void onTick(MinecraftServer server) {
@@ -36,15 +35,6 @@ public class FastRTP implements ModInitializer {
 
     private void onRegisterCommands(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess, Commands.CommandSelection environment) {
         RandomTeleportCommand.register(dispatcher);
-    }
-
-    private void onReload(MinecraftServer server, ResourceManager manager, boolean success) {
-        ConfigHandler.load();
-    }
-
-    private void onServerStarted(MinecraftServer server) {
-        FastRTP.server = server;
-        ConfigHandler.load();
     }
 
     private void onServerStopped(MinecraftServer server) {
