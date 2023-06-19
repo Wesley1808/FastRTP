@@ -33,7 +33,7 @@ The configuration file can be found in `/config/fast-rtp.json`
   "radius": -1,
   // The minimum radius from the world center to search for a safe location.
   "minRadius": 0,
-  // The radius of blocks to check for dangerous surrounding blocks. This doesn't go higher than 2.
+  // The radius of blocks to check for dangerous surrounding blocks. This doesn't go higher than 4.
   "safetyCheckRadius": 1,
   // Cooldown in seconds applied after using /rtp.
   "cooldown": 30,

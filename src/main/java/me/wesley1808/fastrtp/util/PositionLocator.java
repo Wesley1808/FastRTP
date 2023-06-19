@@ -18,6 +18,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.border.WorldBorder;
@@ -28,15 +29,14 @@ import net.minecraft.world.phys.Vec3;
 import java.util.Comparator;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 public final class PositionLocator {
-    private static final Predicate<BlockState> BELOW_PLAYER_PREDICATE = (state) -> (state.blocksMotion() || state.is(Blocks.SNOW)) && !state.is(Blocks.BAMBOO) && !state.is(Blocks.CACTUS) && !state.is(Blocks.MAGMA_BLOCK);
-    private static final Predicate<BlockState> SURROUNDING_BLOCK_PREDICATE = (state) -> !state.is(BlockTags.FIRE) && !state.is(Blocks.LAVA) && !state.is(Blocks.POWDER_SNOW) && !state.is(Blocks.MAGMA_BLOCK);
     private static final Object2ObjectOpenHashMap<UUID, PositionLocator> LOCATORS = new Object2ObjectOpenHashMap<>();
     private static final ObjectOpenHashSet<UUID> PENDING_REMOVAL = new ObjectOpenHashSet<>();
     private static final TicketType<ChunkPos> LOCATE = TicketType.create("locate", Comparator.comparingLong(ChunkPos::toLong), 200);
     private static final RandomSource RANDOM = RandomSource.createNewThreadLocalInstance();
+    private static final int MAX_SAFETY_CHECK_RADIUS = 4;
+    private static final int MAX_ATTEMPTS = 256;
     private final ServerLevel level;
     private final UUID uuid;
     private final int minRadius;
@@ -97,7 +97,7 @@ public final class PositionLocator {
     }
 
     private void newPosition() {
-        if (++this.attempts > 256 || System.currentTimeMillis() > this.stopTime) {
+        if (++this.attempts > MAX_ATTEMPTS || System.currentTimeMillis() > this.stopTime) {
             this.callback.accept(null);
             return;
         }
@@ -142,11 +142,14 @@ public final class PositionLocator {
     }
 
     private Vec3 findSafePositionInChunk(LevelChunk chunk, int centerX, int centerZ) {
-        for (int x = centerX - 6; x <= centerX + 5; x++) {
-            for (int z = centerZ - 6; z <= centerZ + 5; z++) {
+        int negativeDiff = 8 - Mth.clamp(Config.instance().safetyCheckRadius, 1, MAX_SAFETY_CHECK_RADIUS);
+        int positiveDiff = negativeDiff - 1;
+
+        for (int x = centerX - negativeDiff; x <= centerX + positiveDiff; x++) {
+            for (int z = centerZ - negativeDiff; z <= centerZ + positiveDiff; z++) {
                 int y = this.getY(chunk, x, z);
                 if (this.isSafe(chunk, x, y, z)) {
-                    return new Vec3(Mth.floor(x) + 0.5D, y + 1, Mth.floor(z) + 0.5D);
+                    return new Vec3(x + 0.5D, y + 1, z + 0.5D);
                 }
             }
         }
@@ -157,17 +160,20 @@ public final class PositionLocator {
     private boolean isSafe(LevelChunk chunk, int centerX, int y, int centerZ) {
         // Early return if the landing position isn't safe.
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos(centerX, y, centerZ);
-        if (!BELOW_PLAYER_PREDICATE.test(chunk.getBlockState(mutable)) || !this.level.noCollision(EntityType.PLAYER.getAABB(Mth.floor(centerX) + 0.5D, y + 1, Mth.floor(centerZ) + 0.5D))) {
+        if (!this.isSafeBelowPlayer(chunk.getBlockState(mutable)) ||
+            !this.isSafeSurroundingPlayer(chunk.getBlockState(mutable.move(Direction.UP))) ||
+            !this.level.noCollision(EntityType.PLAYER.getAABB(centerX + 0.5D, y + 1, centerZ + 0.5D))
+        ) {
             return false;
         }
 
-        int radius = Math.min(Config.instance().safetyCheckRadius, 2);
+        int radius = Math.min(Config.instance().safetyCheckRadius, MAX_SAFETY_CHECK_RADIUS);
         if (radius > 0) {
             for (int x = centerX - radius; x <= centerX + radius; x++) {
                 for (int z = centerZ - radius; z <= centerZ + radius; z++) {
                     if (x != centerX || z != centerZ) {
                         BlockState state = chunk.getBlockState(mutable.set(x, y, z));
-                        if (state.isAir() || !SURROUNDING_BLOCK_PREDICATE.test(state) || !SURROUNDING_BLOCK_PREDICATE.test(chunk.getBlockState(mutable.move(Direction.UP)))) {
+                        if (!this.isSafeSurroundingBelowPlayer(state) || !this.isSafeSurroundingPlayer(chunk.getBlockState(mutable.move(Direction.UP)))) {
                             return false;
                         }
                     }
@@ -176,6 +182,29 @@ public final class PositionLocator {
         }
 
         return true;
+    }
+
+    private boolean isSafeBelowPlayer(BlockState state) {
+        Block block = state.getBlock();
+        return this.isSafeSurroundingBelowPlayer(state) && block != Blocks.BAMBOO;
+    }
+
+    private boolean isSafeSurroundingBelowPlayer(BlockState state) {
+        Block block = state.getBlock();
+        return (state.blocksMotion() || block == Blocks.SNOW) &&
+               block != Blocks.CACTUS &&
+               block != Blocks.MAGMA_BLOCK;
+    }
+
+    private boolean isSafeSurroundingPlayer(BlockState state) {
+        Block block = state.getBlock();
+        return !state.is(BlockTags.FIRE) &&
+               !state.is(BlockTags.CAMPFIRES) &&
+               block != Blocks.LAVA &&
+               block != Blocks.POWDER_SNOW &&
+               block != Blocks.MAGMA_BLOCK &&
+               block != Blocks.CACTUS &&
+               block != Blocks.SWEET_BERRY_BUSH;
     }
 
     private int getY(LevelChunk chunk, int x, int z) {
