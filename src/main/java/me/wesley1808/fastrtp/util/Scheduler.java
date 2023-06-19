@@ -39,7 +39,7 @@ public final class Scheduler {
             return;
         }
 
-        player.displayClientMessage(Util.format(Config.instance().messageTpSecondsLeft
+        player.displayClientMessage(Util.format(Config.instance().messages.tpSecondsLeft
                 .replace("${seconds}", String.valueOf(seconds))
                 .replace("seconds", seconds == 1 ? "second" : "seconds")
         ), false);

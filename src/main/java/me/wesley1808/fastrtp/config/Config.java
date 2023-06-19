@@ -1,6 +1,5 @@
 package me.wesley1808.fastrtp.config;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.minecraft.resources.ResourceKey;
@@ -36,17 +35,25 @@ public class Config {
             BiomeTags.IS_RIVER
     ));
 
-    public String messageRtpFail = "&c[✖] Could not find a safe location!";
-    public String messageRtpSuccess = "&3Teleported to &a${x} ${y} ${z} &3in &a${world}";
-    public String messageRtpSearching = "&eSearching for a safe location...";
-    public String messageRtpFound = "&eFound a safe location in ${seconds} seconds";
-    public String messageOnCooldown = "&c[✖] &6Please wait &e${seconds} &6seconds before using the RTP again!";
-    public String messageRtpBackSuccess = "&3Teleported back to your last random teleport!";
-    public String messageRtpBackFail = "&c[✖] You don't have any recent random teleports.";
-    public String messageTpCancelled = "&c[✖] Teleportation was cancelled.";
-    public String messageTpSecondsLeft = "&eTeleporting in ${seconds} seconds...";
+    public Messages messages = new Messages();
 
     public static Config instance() {
         return instance;
+    }
+
+    public static class Messages {
+        public String rtpStartSearch = "&eSearching for a safe location...";
+        public String rtpLocFound = "&eFound a safe location in ${seconds} seconds";
+        public String rtpTeleportPlayer = "&3Teleported to &a${x} ${y} ${z} &3in &a${world}";
+        public String rtpLocNotFound = "&c[✖] Could not find a safe location!";
+        public String rtpOnCooldown = "&c[✖] &6Please wait &e${seconds} &6seconds before using the RTP again!";
+        public String preventedRtp = "&c[✖] Could not start random teleport.\nReason: ${reason}";
+
+        public String rtpBackSuccess = "&3Teleported back to your last random teleport!";
+        public String rtpBackLocNotFound = "&c[✖] You don't have any recent random teleports.";
+        public String preventedRtpBack = "&c[✖] Unable to teleport back to your last RTP location.\nReason: ${reason}";
+
+        public String tpSecondsLeft = "&eTeleporting in ${seconds} seconds...";
+        public String tpCancelled = "&c[✖] Teleportation was cancelled.";
     }
 }

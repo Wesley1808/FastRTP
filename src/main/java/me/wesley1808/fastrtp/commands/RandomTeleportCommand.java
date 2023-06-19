@@ -87,7 +87,7 @@ public final class RandomTeleportCommand {
 
     private static int execute(CommandSourceStack source, ServerPlayer player, ServerLevel level, int radius, int minRadius, boolean force) {
         if (minRadius > radius) {
-            source.sendFailure(Component.literal("Minimum radius cannot be larger than radius!"));
+            source.sendFailure(Component.literal("The minimum radius cannot be larger than the maximum radius!"));
             return 0;
         }
 
@@ -96,42 +96,40 @@ public final class RandomTeleportCommand {
             return 0;
         }
 
+        Config.Messages messages = Config.instance().messages;
         if (!force && CooldownManager.hasCooldown(player.getUUID())) {
             String seconds = String.valueOf(CooldownManager.getCooldownInSeconds(player.getUUID()));
-            player.displayClientMessage(Util.format(Config.instance().messageOnCooldown.replace("${seconds}", seconds)), false);
+            player.displayClientMessage(Util.format(messages.rtpOnCooldown.replace("${seconds}", seconds)), false);
             return 0;
         }
 
-        String error = force ? null : TeleportUtils.mayTeleport(player);
+        String error = force ? null : Util.mayTeleport(player);
         if (error != null) {
-            player.sendSystemMessage(Component.literal("Unable to teleport.\nReason: " + error).withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Util.format(messages.preventedRtp.replace("${reason}", error)));
             return 0;
         }
 
-        player.displayClientMessage(Util.format(Config.instance().messageRtpSearching), true);
+        player.displayClientMessage(Util.format(messages.rtpStartSearch), true);
         CooldownManager.addCooldown(player);
 
         long startTime = System.currentTimeMillis();
         PositionLocator locator = new PositionLocator(level, player.getUUID(), radius, minRadius);
         locator.findPosition((pos) -> {
-            if (pos != null) {
+            if (pos == null) {
+                player.sendSystemMessage(Util.format(messages.rtpLocNotFound));
+                CooldownManager.removeCooldown(player.getUUID());
+            } else {
                 if (force || !Config.instance().useStrictTeleportCheck) {
                     teleportPlayer(player, level, pos);
                 } else {
                     long elapsedTime = System.currentTimeMillis() - startTime;
-                    player.displayClientMessage(Util.format(Config.instance().messageRtpFound
-                            .replace("${seconds}", String.format("%.1f", elapsedTime / 1000F))
-                    ), true);
+                    player.displayClientMessage(Util.format(messages.rtpLocFound.replace("${seconds}", String.format("%.1f", elapsedTime / 1000F))), true);
 
-                    Scheduler.scheduleTeleport(player, () -> {
-                        teleportPlayer(player, level, pos);
-                    }, () -> {
-                        player.displayClientMessage(Util.format(Config.instance().messageTpCancelled), false);
-                    });
+                    Scheduler.scheduleTeleport(player,
+                            () -> teleportPlayer(player, level, pos),
+                            () -> player.displayClientMessage(Util.format(messages.tpCancelled), false)
+                    );
                 }
-            } else {
-                player.sendSystemMessage(Util.format(Config.instance().messageRtpFail));
-                CooldownManager.removeCooldown(player.getUUID());
             }
         });
 
@@ -144,7 +142,7 @@ public final class RandomTeleportCommand {
             player.connection.resetPosition();
             RTP_COORDS.put(player.getUUID(), new ObjectObjectImmutablePair<>(level, pos));
 
-            player.sendSystemMessage(Util.format(Config.instance().messageRtpSuccess
+            player.sendSystemMessage(Util.format(Config.instance().messages.rtpTeleportPlayer
                     .replace("${x}", String.format("%.0f", pos.x))
                     .replace("${y}", String.format("%.0f", pos.y))
                     .replace("${z}", String.format("%.0f", pos.z))
@@ -160,15 +158,16 @@ public final class RandomTeleportCommand {
             return 0;
         }
 
+        Config.Messages messages = Config.instance().messages;
         Pair<ServerLevel, Vec3> pair = RTP_COORDS.get(uuid);
         if (pair == null) {
-            player.sendSystemMessage(Util.format(Config.instance().messageRtpBackFail));
+            player.sendSystemMessage(Util.format(messages.rtpBackLocNotFound));
             return 0;
         }
 
-        String error = TeleportUtils.mayTeleport(player);
+        String error = Util.mayTeleport(player);
         if (error != null) {
-            player.sendSystemMessage(Component.literal("Unable to teleport.\nReason: " + error).withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Util.format(messages.preventedRtpBack.replace("${reason}", error)));
             return 0;
         }
 
@@ -179,9 +178,9 @@ public final class RandomTeleportCommand {
         Scheduler.scheduleTeleport(player, () -> {
             player.teleportTo(level, pos.x, pos.y, pos.z, player.getYRot(), player.getXRot());
             player.connection.resetPosition();
-            player.sendSystemMessage(Util.format(Config.instance().messageRtpBackSuccess));
+            player.sendSystemMessage(Util.format(messages.rtpBackSuccess));
         }, () -> {
-            player.displayClientMessage(Util.format(Config.instance().messageTpCancelled), false);
+            player.displayClientMessage(Util.format(messages.tpCancelled), false);
         });
 
         return 1;
