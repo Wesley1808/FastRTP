@@ -7,11 +7,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.UUID;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public final class Scheduler {
-    private static final ScheduledThreadPoolExecutor SCHEDULER = new ScheduledThreadPoolExecutor(0);
+    private static final ScheduledExecutorService SCHEDULER = Executors.newScheduledThreadPool(0);
     private static final ObjectOpenHashSet<UUID> ACTIVE = new ObjectOpenHashSet<>();
 
     public static boolean canSchedule(UUID uuid) {

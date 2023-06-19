@@ -36,7 +36,7 @@ public final class PositionLocator {
     private static final Object2ObjectOpenHashMap<UUID, PositionLocator> LOCATORS = new Object2ObjectOpenHashMap<>();
     private static final ObjectOpenHashSet<UUID> PENDING_REMOVAL = new ObjectOpenHashSet<>();
     private static final TicketType<ChunkPos> LOCATE = TicketType.create("locate", Comparator.comparingLong(ChunkPos::toLong), 200);
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = RandomSource.createNewThreadLocalInstance();
     private final ServerLevel level;
     private final UUID uuid;
     private final int minRadius;
@@ -55,15 +55,17 @@ public final class PositionLocator {
     }
 
     public static void update() {
-        for (PositionLocator locator : LOCATORS.values()) {
-            locator.tick();
-        }
+        if (LOCATORS.size() > 0) {
+            for (PositionLocator locator : LOCATORS.values()) {
+                locator.tick();
+            }
 
-        for (UUID uuid : PENDING_REMOVAL) {
-            LOCATORS.remove(uuid);
-        }
+            for (UUID uuid : PENDING_REMOVAL) {
+                LOCATORS.remove(uuid);
+            }
 
-        PENDING_REMOVAL.clear();
+            PENDING_REMOVAL.clear();
+        }
     }
 
     public PositionLocator(ServerLevel level, UUID uuid, int radius, int minRadius) {
@@ -217,6 +219,8 @@ public final class PositionLocator {
     }
 
     private int nextRandomValueWithMinimum(int center) {
-        return RANDOM.nextBoolean() ? Mth.nextInt(RANDOM, center + this.minRadius, center + this.radius) : Mth.nextInt(RANDOM, center - this.radius, center - this.minRadius);
+        return RANDOM.nextBoolean()
+                ? Mth.nextInt(RANDOM, center + this.minRadius, center + this.radius)
+                : Mth.nextInt(RANDOM, center - this.radius, center - this.minRadius);
     }
 }
