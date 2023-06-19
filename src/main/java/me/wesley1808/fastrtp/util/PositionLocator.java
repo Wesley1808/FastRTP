@@ -11,14 +11,13 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
-import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.border.WorldBorder;
@@ -203,15 +202,14 @@ public final class PositionLocator {
     }
 
     private boolean isBiomeValid(Holder<Biome> biome) {
+        for (TagKey<Biome> biomeTag : Config.instance().blackListedBiomeTags) {
+            if (biome.is(biomeTag)) {
+                return false;
+            }
+        }
+
         ResourceKey<Biome> key = this.level.registryAccess().registryOrThrow(Registries.BIOME).getResourceKey(biome.value()).orElse(null);
-        return key != null
-               && !biome.is(BiomeTags.IS_BEACH)
-               && !biome.is(BiomeTags.IS_OCEAN)
-               && !biome.is(BiomeTags.IS_DEEP_OCEAN)
-               && !biome.is(BiomeTags.IS_RIVER)
-               && key != Biomes.THE_END
-               && key != Biomes.SMALL_END_ISLANDS
-               && key != Biomes.THE_VOID;
+        return !Config.instance().blackListedBiomes.contains(key);
     }
 
     private int nextRandomValue(int center) {

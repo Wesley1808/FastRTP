@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public final class ConfigHandler {
-    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
     private static final File DIR = FabricLoader.getInstance().getConfigDir().toFile();
     private static final File CONFIG = new File(DIR, "fast-rtp.json");
 
@@ -22,7 +21,7 @@ public final class ConfigHandler {
         }
 
         try (var writer = new FileWriter(CONFIG, StandardCharsets.UTF_8)) {
-            writer.write(GSON.toJson(Config.instance));
+            writer.write(Json.INSTANCE.toJson(Config.instance));
         } catch (IOException e) {
             FastRTP.LOGGER.error("Failed to save config!", e);
         }
@@ -31,10 +30,12 @@ public final class ConfigHandler {
     public static void load() {
         if (CONFIG.exists()) {
             try (var reader = new FileReader(CONFIG, StandardCharsets.UTF_8)) {
-                Config.instance = GSON.fromJson(reader, Config.class);
+                Config.instance = Json.INSTANCE.fromJson(reader, Config.class);
             } catch (IOException e) {
                 FastRTP.LOGGER.error("Failed to load config!", e);
             }
+        } else {
+            save();
         }
     }
 }

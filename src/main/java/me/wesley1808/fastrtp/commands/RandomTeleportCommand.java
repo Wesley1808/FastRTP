@@ -115,7 +115,7 @@ public final class RandomTeleportCommand {
         PositionLocator locator = new PositionLocator(level, player.getUUID(), radius, minRadius);
         locator.findPosition((pos) -> {
             if (pos != null) {
-                if (force) {
+                if (force || !Config.instance().useStrictTeleportCheck) {
                     teleportPlayer(player, level, pos);
                 } else {
                     long elapsedTime = System.currentTimeMillis() - startTime;
