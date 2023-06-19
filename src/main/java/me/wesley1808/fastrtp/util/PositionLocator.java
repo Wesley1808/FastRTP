@@ -139,7 +139,7 @@ public final class PositionLocator {
         this.newPosition();
     }
 
-    private Vec3 findSafePositionInChunk(LevelChunk chunk, final int centerX, final int centerZ) {
+    private Vec3 findSafePositionInChunk(LevelChunk chunk, int centerX, int centerZ) {
         for (int x = centerX - 6; x <= centerX + 5; x++) {
             for (int z = centerZ - 6; z <= centerZ + 5; z++) {
                 int y = this.getY(chunk, x, z);
@@ -152,7 +152,7 @@ public final class PositionLocator {
         return null;
     }
 
-    private boolean isSafe(LevelChunk chunk, double centerX, int y, double centerZ) {
+    private boolean isSafe(LevelChunk chunk, int centerX, int y, int centerZ) {
         // Early return if the landing position isn't safe.
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos(centerX, y, centerZ);
         if (!BELOW_PLAYER_PREDICATE.test(chunk.getBlockState(mutable)) || !this.level.noCollision(EntityType.PLAYER.getAABB(Mth.floor(centerX) + 0.5D, y + 1, Mth.floor(centerZ) + 0.5D))) {
@@ -161,8 +161,8 @@ public final class PositionLocator {
 
         int radius = Math.min(Config.instance().safetyCheckRadius, 2);
         if (radius > 0) {
-            for (double x = centerX - radius; x <= centerX + radius; x++) {
-                for (double z = centerZ - radius; z <= centerZ + radius; z++) {
+            for (int x = centerX - radius; x <= centerX + radius; x++) {
+                for (int z = centerZ - radius; z <= centerZ + radius; z++) {
                     if (x != centerX || z != centerZ) {
                         BlockState state = chunk.getBlockState(mutable.set(x, y, z));
                         if (state.isAir() || !SURROUNDING_BLOCK_PREDICATE.test(state) || !SURROUNDING_BLOCK_PREDICATE.test(chunk.getBlockState(mutable.move(Direction.UP)))) {
@@ -176,13 +176,13 @@ public final class PositionLocator {
         return true;
     }
 
-    private int getY(LevelChunk chunk, double x, double z) {
+    private int getY(LevelChunk chunk, int x, int z) {
         if (!this.level.dimensionType().hasCeiling()) {
-            return chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int) x, (int) z);
+            return chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
         }
 
-        final double bottomY = chunk.getMinBuildHeight();
-        final BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos(x, this.level.getLogicalHeight(), z);
+        int bottomY = chunk.getMinBuildHeight();
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos(x, this.level.getLogicalHeight(), z);
 
         boolean isAir = false;
         boolean isAirBelow = false;
@@ -196,7 +196,7 @@ public final class PositionLocator {
 
     private boolean isValid(ChunkPos pos) {
         if (this.level.getWorldBorder().isWithinBounds(pos)) {
-            return this.isBiomeValid(this.level.getBiome(new BlockPos(this.x, 128, this.z)));
+            return this.isBiomeValid(this.level.getBiome(new BlockPos(this.x, this.level.getLogicalHeight(), this.z)));
         }
         return false;
     }

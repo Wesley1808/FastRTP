@@ -1,11 +1,11 @@
 package me.wesley1808.fastrtp.util;
 
+import eu.pb4.placeholders.api.TextParserUtils;
 import me.wesley1808.fastrtp.config.Config;
 import me.wesley1808.fastrtp.mixins.ServerChunkCacheAccessor;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ChunkHolder;
@@ -40,20 +40,8 @@ public final class Util {
         return accessor.getHolder(ChunkPos.asLong(chunkX, chunkZ));
     }
 
-    // Outdated message formatting method.
-    // Will be used until there's a better solution that consistently works in snapshots.
-    public static MutableComponent format(String string) {
-        var builder = new StringBuilder(string);
-        for (int index = builder.indexOf("&"); index >= 0; index = builder.indexOf("&", index + 1)) {
-            if (matches(builder.charAt(index + 1))) {
-                builder.setCharAt(index, '§');
-            }
-        }
-        return Component.literal(builder.toString());
-    }
-
-    private static boolean matches(Character c) {
-        return "b0931825467adcfelmnor".contains(c.toString());
+    public static Component format(String string) {
+        return TextParserUtils.formatTextSafe(string);
     }
 
     public static ServerLevel getLevel(ServerPlayer player) {

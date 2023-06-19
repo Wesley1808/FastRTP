@@ -8,6 +8,7 @@ group = project.maven_group
 
 repositories {
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url "https://maven.nucleoid.xyz/" }
 }
 
 dependencies {
@@ -16,11 +17,14 @@ dependencies {
     mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-    // Fabric API. This is technically optional, but you probably want it anyway.
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // Fabric API
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
     // Permission API
-    modImplementation 'me.lucko:fabric-permissions-api:0.1-SNAPSHOT'
+    modImplementation(include("me.lucko:fabric-permissions-api:${project.permission_api_version}"))
+
+    // Placeholder API
+    modImplementation(include("eu.pb4:placeholder-api:${project.placeholder_api_version}"))
 }
 
 processResources {

@@ -119,12 +119,12 @@ public final class RandomTeleportCommand {
                 player.sendSystemMessage(Util.format(messages.rtpLocNotFound));
                 CooldownManager.removeCooldown(player.getUUID());
             } else {
+                long elapsedTime = System.currentTimeMillis() - startTime;
+                player.displayClientMessage(Util.format(messages.rtpLocFound.replace("${seconds}", String.format("%.1f", elapsedTime / 1000F))), true);
+
                 if (force || !Config.instance().useStrictTeleportCheck) {
                     teleportPlayer(player, level, pos);
                 } else {
-                    long elapsedTime = System.currentTimeMillis() - startTime;
-                    player.displayClientMessage(Util.format(messages.rtpLocFound.replace("${seconds}", String.format("%.1f", elapsedTime / 1000F))), true);
-
                     Scheduler.scheduleTeleport(player,
                             () -> teleportPlayer(player, level, pos),
                             () -> player.displayClientMessage(Util.format(messages.tpCancelled), false)

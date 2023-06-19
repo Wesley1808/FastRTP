@@ -42,18 +42,18 @@ public class Config {
     }
 
     public static class Messages {
-        public String rtpStartSearch = "&eSearching for a safe location...";
-        public String rtpLocFound = "&eFound a safe location in ${seconds} seconds";
-        public String rtpTeleportPlayer = "&3Teleported to &a${x} ${y} ${z} &3in &a${world}";
-        public String rtpLocNotFound = "&c[✖] Could not find a safe location!";
-        public String rtpOnCooldown = "&c[✖] &6Please wait &e${seconds} &6seconds before using the RTP again!";
-        public String preventedRtp = "&c[✖] Could not start random teleport.\nReason: ${reason}";
+        public String rtpStartSearch = "<yellow>Searching for a safe location...";
+        public String rtpLocFound = "<yellow>Found a safe location in ${seconds} seconds";
+        public String rtpTeleportPlayer = "<dark_aqua>Teleported to <green>${x} ${y} ${z} <dark_aqua>in <green>${world}";
+        public String rtpLocNotFound = "<red>[✖] Could not find a safe location!";
+        public String rtpOnCooldown = "<red>[✖] <gold>Please wait <yellow>${seconds} <gold>seconds before using the RTP again!";
+        public String preventedRtp = "<red>[✖] Could not start random teleport.\nReason: ${reason}";
 
-        public String rtpBackSuccess = "&3Teleported back to your last random teleport!";
-        public String rtpBackLocNotFound = "&c[✖] You don't have any recent random teleports.";
-        public String preventedRtpBack = "&c[✖] Unable to teleport back to your last RTP location.\nReason: ${reason}";
+        public String rtpBackSuccess = "<dark_aqua>Teleported back to your last random teleport!";
+        public String rtpBackLocNotFound = "<red>[✖] You don't have any recent random teleports.";
+        public String preventedRtpBack = "<red>[✖] Unable to teleport back to your last RTP location.\nReason: ${reason}";
 
-        public String tpSecondsLeft = "&eTeleporting in ${seconds} seconds...";
-        public String tpCancelled = "&c[✖] Teleportation was cancelled.";
+        public String tpSecondsLeft = "<yellow>Teleporting in ${seconds} seconds...";
+        public String tpCancelled = "<red>[✖] Teleportation was cancelled.";
     }
 }
