@@ -27,7 +27,7 @@ public final class CooldownManager {
 
     public static void addCooldown(ServerPlayer player) {
         int cooldown = Config.instance().cooldown;
-        if (cooldown != -1 && !PermissionManager.hasPermission(player, "fast-rtp.bypass.cooldown")) {
+        if (cooldown != -1 && !Permission.check(player, Permission.BYPASS_COOLDOWN, 2)) {
             COOLDOWNS.put(player.getUUID(), System.currentTimeMillis() + (cooldown * 1000L));
         }
     }

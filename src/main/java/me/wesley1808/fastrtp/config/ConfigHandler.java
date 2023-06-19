@@ -1,7 +1,5 @@
 package me.wesley1808.fastrtp.config;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import me.wesley1808.fastrtp.FastRTP;
 import net.fabricmc.loader.api.FabricLoader;
 

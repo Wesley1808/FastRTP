@@ -36,16 +36,16 @@ public final class RandomTeleportCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(literal("rtp")
-                .requires(src -> !Config.instance().requirePermission || PermissionManager.hasPermission(src, "fast-rtp.command.root", 2))
+                .requires(src -> !Config.instance().requirePermission || Permission.check(src, Permission.COMMAND_RTP, 2))
                 .executes(ctx -> execute(ctx.getSource()))
 
                 .then(literal("reload")
-                        .requires(src -> PermissionManager.hasPermission(src, "fast-rtp.command.reload", 2))
+                        .requires(Permission.require(Permission.COMMAND_RELOAD, 2))
                         .executes(ctx -> reloadConfig(ctx.getSource()))
                 )
 
                 .then(argument("player", player())
-                        .requires(src -> PermissionManager.hasPermission(src, "fast-rtp.command.advanced", 2))
+                        .requires(Permission.require(Permission.COMMAND_RTP_ADVANCED, 2))
                         .executes(ctx -> execute(ctx.getSource(), getPlayer(ctx, "player")))
 
                         .then(argument("world", dimension())
@@ -114,6 +114,7 @@ public final class RandomTeleportCommand {
 
         long startTime = System.currentTimeMillis();
         PositionLocator locator = new PositionLocator(level, player.getUUID(), radius, minRadius);
+
         locator.findPosition((pos) -> {
             if (pos == null) {
                 player.sendSystemMessage(Util.format(messages.rtpLocNotFound));
@@ -150,7 +151,6 @@ public final class RandomTeleportCommand {
             ));
         }
     }
-
 
     private static int executeBack(ServerPlayer player) {
         UUID uuid = player.getUUID();
