@@ -33,10 +33,16 @@ public final class Scheduler {
     }
 
     private static void teleportLoop(int seconds, MinecraftServer server, UUID uuid, Vec3 oldPos, Runnable onSuccess, Runnable onFail) {
+        if (seconds <= 0) {
+            ACTIVE.remove(uuid);
+            server.execute(onSuccess);
+            return;
+        }
+
         ServerPlayer player = server.getPlayerList().getPlayer(uuid);
         if (player == null || !player.position().closerThan(oldPos, 2)) {
             ACTIVE.remove(uuid);
-            onFail.run();
+            server.execute(onFail);
             return;
         }
 
@@ -45,13 +51,6 @@ public final class Scheduler {
                 .replace("seconds", seconds == 1 ? "second" : "seconds")
         ), false);
 
-        if (seconds == 1) {
-            schedule(1000, () -> {
-                onSuccess.run();
-                ACTIVE.remove(uuid);
-            });
-        } else {
-            schedule(1000, () -> teleportLoop(seconds - 1, server, uuid, oldPos, onSuccess, onFail));
-        }
+        schedule(1000, () -> teleportLoop(seconds - 1, server, uuid, oldPos, onSuccess, onFail));
     }
 }
