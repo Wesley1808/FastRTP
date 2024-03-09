@@ -3,7 +3,7 @@ package me.wesley1808.fastrtp.util;
 import eu.pb4.placeholders.api.TextParserUtils;
 import me.wesley1808.fastrtp.config.Config;
 import me.wesley1808.fastrtp.mixins.ServerChunkCacheAccessor;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Registry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -47,10 +47,10 @@ public final class Util {
     public static ServerLevel getLevel(ServerPlayer player) {
         ResourceLocation location;
         if (Config.instance().useCurrentWorld || (location = ResourceLocation.tryParse(Config.instance().defaultDimension)) == null) {
-            return player.serverLevel();
+            return player.getLevel();
         }
 
-        return player.server.getLevel(ResourceKey.create(Registries.DIMENSION, location));
+        return player.server.getLevel(ResourceKey.create(Registry.DIMENSION_REGISTRY, location));
     }
 
     public static int getRadius(ServerLevel level) {
@@ -74,7 +74,7 @@ public final class Util {
                 return "Darkness Effect";
             }
 
-            List<Monster> monsters = player.level().getEntities(EntityTypeTest.forClass(Monster.class), player.getBoundingBox().inflate(64D), EntitySelector.NO_SPECTATORS);
+            List<Monster> monsters = player.level.getEntities(EntityTypeTest.forClass(Monster.class), player.getBoundingBox().inflate(64D), EntitySelector.NO_SPECTATORS);
             for (Monster monster : monsters) {
                 if (isTargeted(player, monster)) {
                     if (monster instanceof Warden) {

@@ -3,10 +3,12 @@ package me.wesley1808.fastrtp.util;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import me.wesley1808.fastrtp.config.Config;
+import net.fabricmc.fabric.api.event.registry.RegistryAttribute;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Registry;
+import net.minecraft.data.BuiltinRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -191,7 +193,7 @@ public final class PositionLocator {
 
     private boolean isSafeSurroundingBelowPlayer(BlockState state) {
         Block block = state.getBlock();
-        return (state.blocksMotion() || block == Blocks.SNOW) &&
+        return (state.getMaterial().blocksMotion() || block == Blocks.SNOW) &&
                block != Blocks.CACTUS &&
                block != Blocks.MAGMA_BLOCK;
     }
@@ -239,7 +241,7 @@ public final class PositionLocator {
             }
         }
 
-        ResourceKey<Biome> key = this.level.registryAccess().registryOrThrow(Registries.BIOME).getResourceKey(biome.value()).orElse(null);
+        ResourceKey<Biome> key = this.level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY).getResourceKey(biome.value()).orElse(null);
         return !Config.instance().blackListedBiomes.contains(key);
     }
 

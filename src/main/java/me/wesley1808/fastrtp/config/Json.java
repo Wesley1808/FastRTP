@@ -1,7 +1,7 @@
 package me.wesley1808.fastrtp.config;
 
 import com.google.gson.*;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -22,7 +22,7 @@ public class Json {
         public TagKey<Biome> deserialize(JsonElement element, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
             if (element.isJsonPrimitive()) {
                 ResourceLocation location = new ResourceLocation(element.getAsString());
-                return TagKey.create(Registries.BIOME, location);
+                return TagKey.create(Registry.BIOME_REGISTRY, location);
             }
             return null;
         }
@@ -37,7 +37,7 @@ public class Json {
         public ResourceKey<Biome> deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {
             if (element.isJsonPrimitive()) {
                 ResourceLocation location = new ResourceLocation(element.getAsString());
-                return ResourceKey.create(Registries.BIOME, location);
+                return ResourceKey.create(Registry.BIOME_REGISTRY, location);
             }
             return null;
         }

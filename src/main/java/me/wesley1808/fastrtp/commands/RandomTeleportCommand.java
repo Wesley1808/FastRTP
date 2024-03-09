@@ -174,7 +174,7 @@ public final class RandomTeleportCommand {
         Vec3 pos = pair.right();
         ServerLevel level = pair.left();
 
-        level.getChunkSource().addRegionTicket(PRE_TELEPORT, new ChunkPos(BlockPos.containing(pos)), 1, player.getId());
+        level.getChunkSource().addRegionTicket(PRE_TELEPORT, new ChunkPos(new BlockPos(pos)), 1, player.getId());
         Scheduler.scheduleTeleport(player, () -> {
             player.teleportTo(level, pos.x, pos.y, pos.z, player.getYRot(), player.getXRot());
             player.connection.resetPosition();
@@ -188,7 +188,7 @@ public final class RandomTeleportCommand {
 
     private static int reloadConfig(CommandSourceStack source) {
         ConfigHandler.load();
-        source.sendSuccess(() -> Component.literal("Config reloaded!").withStyle(ChatFormatting.GREEN), false);
+        source.sendSuccess(Component.literal("Config reloaded!").withStyle(ChatFormatting.GREEN), false);
         return Command.SINGLE_SUCCESS;
     }
 }
