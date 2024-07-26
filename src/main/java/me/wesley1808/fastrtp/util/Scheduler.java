@@ -40,7 +40,7 @@ public final class Scheduler {
         }
 
         ServerPlayer player = server.getPlayerList().getPlayer(uuid);
-        if (player == null || !player.position().closerThan(oldPos, 2)) {
+        if (player == null || (Config.instance().useStrictTeleportCheck && !player.position().closerThan(oldPos, 2))) {
             ACTIVE.remove(uuid);
             server.execute(onFail);
             return;
