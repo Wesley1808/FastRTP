@@ -6,6 +6,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectObjectImmutablePair;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import me.wesley1808.fastrtp.config.Config;
 import me.wesley1808.fastrtp.config.ConfigHandler;
 import me.wesley1808.fastrtp.util.*;
@@ -62,7 +63,12 @@ public final class RandomTeleportCommand {
                 )
         );
 
-        dispatcher.register(literal("rtpback").executes(ctx -> executeBack(ctx.getSource().getPlayerOrException())));
+        if (Config.instance().rtpBackEnabled) {
+            dispatcher.register(literal("rtpback")
+                    .requires(Permissions.require(Permission.COMMAND_RTP_BACK, true))
+                    .executes(ctx -> executeBack(ctx.getSource().getPlayerOrException()))
+            );
+        }
     }
 
     private static int execute(CommandSourceStack source) throws CommandSyntaxException {

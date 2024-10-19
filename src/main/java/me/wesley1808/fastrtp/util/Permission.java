@@ -12,6 +12,7 @@ public final class Permission {
     public static final String COMMAND_RELOAD = BASE + "command.reload";
     public static final String COMMAND_RTP = BASE + "command.root";
     public static final String COMMAND_RTP_ADVANCED = BASE + "command.advanced";
+    public static final String COMMAND_RTP_BACK = BASE + "command.back";
 
     public static Predicate<CommandSourceStack> require(String perm, int level) {
         return Permissions.require(perm, level);

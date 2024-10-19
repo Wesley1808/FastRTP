@@ -7,6 +7,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
@@ -45,12 +46,33 @@ public final class Util {
     }
 
     public static ServerLevel getLevel(ServerPlayer player) {
-        ResourceLocation location;
-        if (Config.instance().useCurrentWorld || (location = ResourceLocation.tryParse(Config.instance().defaultDimension)) == null) {
-            return player.serverLevel();
+        ServerLevel currentLevel = player.serverLevel();
+
+        ServerLevel redirect = parseLevel(player.server, Config.instance().dimensionRedirects.get(currentLevel.dimension().location().toString()));
+        if (redirect != null) {
+            return redirect;
         }
 
-        return player.server.getLevel(ResourceKey.create(Registries.DIMENSION, location));
+        if (Config.instance().useCurrentWorld) {
+            return currentLevel;
+        }
+
+        ServerLevel defaultLevel = parseLevel(player.server, Config.instance().defaultDimension);
+        return defaultLevel != null ? defaultLevel : currentLevel;
+    }
+
+    @Nullable
+    public static ServerLevel parseLevel(MinecraftServer server, @Nullable String dimension) {
+        if (dimension == null || dimension.isBlank()) {
+            return null;
+        }
+
+        ResourceLocation location = ResourceLocation.tryParse(dimension);
+        if (location == null) {
+            return null;
+        }
+
+        return server.getLevel(ResourceKey.create(Registries.DIMENSION, location));
     }
 
     public static int getRadius(ServerLevel level) {
