@@ -212,7 +212,7 @@ public final class PositionLocator {
             return chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
         }
 
-        int bottomY = chunk.getMinBuildHeight();
+        int bottomY = chunk.getMinY();
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos(x, this.level.getLogicalHeight(), z);
 
         boolean isAir = false;
@@ -239,7 +239,7 @@ public final class PositionLocator {
             }
         }
 
-        ResourceKey<Biome> key = this.level.registryAccess().registryOrThrow(Registries.BIOME).getResourceKey(biome.value()).orElse(null);
+        ResourceKey<Biome> key = this.level.registryAccess().lookupOrThrow(Registries.BIOME).getResourceKey(biome.value()).orElse(null);
         return !Config.instance().blackListedBiomes.contains(key);
     }
 

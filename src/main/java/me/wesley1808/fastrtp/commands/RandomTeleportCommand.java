@@ -20,6 +20,7 @@ import net.minecraft.server.level.TicketType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Set;
 import java.util.UUID;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
@@ -143,7 +144,7 @@ public final class RandomTeleportCommand {
 
     private static void teleportPlayer(ServerPlayer player, ServerLevel level, Vec3 pos) {
         if (player.isAlive()) {
-            player.teleportTo(level, pos.x, pos.y, pos.z, player.getYRot(), player.getXRot());
+            player.teleportTo(level, pos.x, pos.y, pos.z, Set.of(), player.getYRot(), player.getXRot(), true);
             player.connection.resetPosition();
             RTP_COORDS.put(player.getUUID(), new ObjectObjectImmutablePair<>(level, pos));
 
@@ -180,7 +181,7 @@ public final class RandomTeleportCommand {
 
         level.getChunkSource().addRegionTicket(PRE_TELEPORT, new ChunkPos(BlockPos.containing(pos)), 1, player.getId());
         Scheduler.scheduleTeleport(player, () -> {
-            player.teleportTo(level, pos.x, pos.y, pos.z, player.getYRot(), player.getXRot());
+            player.teleportTo(level, pos.x, pos.y, pos.z, Set.of(), player.getYRot(), player.getXRot(), true);
             player.connection.resetPosition();
             player.sendSystemMessage(Util.format(messages.rtpBackSuccess));
         }, () -> {
