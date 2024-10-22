@@ -28,7 +28,7 @@ public final class CooldownManager {
 
     public static void addCooldown(ServerPlayer player) {
         int cooldown = Config.instance().cooldown;
-        if (cooldown != -1 && !Permissions.check(player, Permission.BYPASS_COOLDOWN, 2)) {
+        if (cooldown != -1 && !Permissions.check(player.createCommandSourceStack(), Permission.BYPASS_COOLDOWN, 2)) {
             COOLDOWNS.put(player.getUUID(), System.currentTimeMillis() + (cooldown * 1000L));
         }
     }
