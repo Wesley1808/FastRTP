@@ -64,10 +64,12 @@ public final class RandomTeleportCommand {
                 )
         );
 
-        dispatcher.register(literal("rtpback")
-                .requires(Permissions.require(Permission.COMMAND_RTP_BACK, true))
-                .executes(ctx -> executeBack(ctx.getSource().getPlayerOrException()))
-        );
+        if (Config.instance().rtpBackEnabled) {
+            dispatcher.register(literal("rtpback")
+                    .requires(Permissions.require(Permission.COMMAND_RTP_BACK, true))
+                    .executes(ctx -> executeBack(ctx.getSource().getPlayerOrException()))
+            );
+        }
     }
 
     private static int execute(CommandSourceStack source) throws CommandSyntaxException {

@@ -1,5 +1,6 @@
 package me.wesley1808.fastrtp.config;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.minecraft.resources.ResourceKey;
@@ -14,9 +15,11 @@ import java.util.Set;
 public class Config {
     protected static Config instance = new Config();
     public boolean requirePermission = false;
+    public boolean rtpBackEnabled = true;
     public boolean useCurrentWorld = false;
     public boolean useStrictTeleportCheck = false;
     public String defaultDimension = "minecraft:overworld";
+    public Object2ObjectOpenHashMap<String, String> dimensionRedirects = new Object2ObjectOpenHashMap<>();
     public int radius = -1;
     public int minRadius = 0;
     public int safetyCheckRadius = 1;
