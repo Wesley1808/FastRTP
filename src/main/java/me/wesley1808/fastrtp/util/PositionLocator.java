@@ -10,7 +10,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.TicketType;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
@@ -26,14 +25,12 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.Comparator;
 import java.util.UUID;
 import java.util.function.Consumer;
 
 public final class PositionLocator {
     private static final Object2ObjectOpenHashMap<UUID, PositionLocator> LOCATORS = new Object2ObjectOpenHashMap<>();
     private static final ObjectOpenHashSet<UUID> PENDING_REMOVAL = new ObjectOpenHashSet<>();
-    private static final TicketType<ChunkPos> LOCATE = TicketType.create("locate", Comparator.comparingLong(ChunkPos::toLong), 200);
     private static final RandomSource RANDOM = RandomSource.createNewThreadLocalInstance();
     private static final int MAX_SAFETY_CHECK_RADIUS = 4;
     private static final int MAX_ATTEMPTS = 256;
@@ -118,7 +115,7 @@ public final class PositionLocator {
     }
 
     private void queueChunk(ChunkPos pos) {
-        this.level.getChunkSource().addRegionTicket(LOCATE, pos, 0, pos);
+        this.level.getChunkSource().addTicketWithRadius(RegistryUtil.LOCATE, pos, 0);
         this.queuedPos = pos;
         PENDING_REMOVAL.remove(this.uuid);
         LOCATORS.put(this.uuid, this);

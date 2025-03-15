@@ -16,7 +16,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.TicketType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec3;
 
@@ -33,7 +32,6 @@ import static net.minecraft.commands.arguments.EntityArgument.getPlayer;
 import static net.minecraft.commands.arguments.EntityArgument.player;
 
 public final class RandomTeleportCommand {
-    private static final TicketType<Integer> PRE_TELEPORT = TicketType.create("pre_teleport", Integer::compareTo, 70);
     private static final Object2ObjectOpenHashMap<UUID, Pair<ServerLevel, Vec3>> RTP_COORDS = new Object2ObjectOpenHashMap<>();
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -181,7 +179,7 @@ public final class RandomTeleportCommand {
         Vec3 pos = pair.right();
         ServerLevel level = pair.left();
 
-        level.getChunkSource().addRegionTicket(PRE_TELEPORT, new ChunkPos(BlockPos.containing(pos)), 1, player.getId());
+        level.getChunkSource().addTicketWithRadius(RegistryUtil.PRE_TELEPORT, new ChunkPos(BlockPos.containing(pos)), 1);
         Scheduler.scheduleTeleport(player, () -> {
             player.teleportTo(level, pos.x, pos.y, pos.z, Set.of(), player.getYRot(), player.getXRot(), true);
             player.connection.resetPosition();

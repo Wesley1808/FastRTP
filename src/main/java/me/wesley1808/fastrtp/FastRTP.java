@@ -5,6 +5,7 @@ import com.mojang.logging.LogUtils;
 import me.wesley1808.fastrtp.commands.RandomTeleportCommand;
 import me.wesley1808.fastrtp.config.ConfigHandler;
 import me.wesley1808.fastrtp.util.PositionLocator;
+import me.wesley1808.fastrtp.util.RegistryUtil;
 import me.wesley1808.fastrtp.util.Scheduler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -21,6 +22,8 @@ public class FastRTP implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        RegistryUtil.register();
+
         CommandRegistrationCallback.EVENT.register(this::onRegisterCommands);
         ServerLifecycleEvents.SERVER_STOPPED.register(this::onServerStopped);
         ServerTickEvents.END_SERVER_TICK.register(this::onTick);
