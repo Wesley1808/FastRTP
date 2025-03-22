@@ -1,6 +1,7 @@
 package me.wesley1808.fastrtp.util;
 
-import eu.pb4.placeholders.api.TextParserUtils;
+import eu.pb4.placeholders.api.ParserContext;
+import eu.pb4.placeholders.api.parsers.NodeParser;
 import me.wesley1808.fastrtp.config.Config;
 import me.wesley1808.fastrtp.mixins.ServerChunkCacheAccessor;
 import net.minecraft.core.registries.Registries;
@@ -28,6 +29,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public final class Util {
+    private static final NodeParser PARSER = NodeParser.builder()
+            .simplifiedTextFormat()
+            .quickText()
+            .requireSafe()
+            .build();
+
 
     @Nullable
     public static LevelChunk getChunkIfLoaded(ServerLevel level, int chunkX, int chunkZ) {
@@ -42,7 +49,7 @@ public final class Util {
     }
 
     public static Component format(String string) {
-        return TextParserUtils.formatTextSafe(string);
+        return PARSER.parseText(string, ParserContext.of());
     }
 
     public static ServerLevel getLevel(ServerPlayer player) {
