@@ -5,8 +5,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.TicketType;
 
 public final class RegistryUtil {
-    public static final TicketType PRE_TELEPORT = registerTicketType("pre_teleport", 70L, false, TicketType.TicketUse.LOADING);
-    public static final TicketType LOCATE = registerTicketType("locate", 200L, false, TicketType.TicketUse.LOADING);
+    public static final TicketType PRE_TELEPORT = registerTicketType("fastrtp:pre_teleport", 70L, false, TicketType.TicketUse.LOADING);
+    public static final TicketType LOCATE = registerTicketType("fastrtp:locate", 200L, false, TicketType.TicketUse.LOADING);
 
     public static void register() {
     }
