@@ -53,9 +53,9 @@ public final class Util {
     }
 
     public static ServerLevel getLevel(ServerPlayer player) {
-        ServerLevel currentLevel = player.serverLevel();
+        ServerLevel currentLevel = player.level();
 
-        ServerLevel redirect = parseLevel(player.server, Config.instance().dimensionRedirects.get(currentLevel.dimension().location().toString()));
+        ServerLevel redirect = parseLevel(currentLevel.getServer(), Config.instance().dimensionRedirects.get(currentLevel.dimension().location().toString()));
         if (redirect != null) {
             return redirect;
         }
@@ -64,7 +64,7 @@ public final class Util {
             return currentLevel;
         }
 
-        ServerLevel defaultLevel = parseLevel(player.server, Config.instance().defaultDimension);
+        ServerLevel defaultLevel = parseLevel(currentLevel.getServer(), Config.instance().defaultDimension);
         return defaultLevel != null ? defaultLevel : currentLevel;
     }
 
