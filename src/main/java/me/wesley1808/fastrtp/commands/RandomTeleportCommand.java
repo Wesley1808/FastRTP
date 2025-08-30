@@ -133,7 +133,10 @@ public final class RandomTeleportCommand {
                 } else {
                     Scheduler.scheduleTeleport(player,
                             () -> teleportPlayer(player, level, pos),
-                            () -> player.displayClientMessage(Util.format(messages.tpCancelled), false)
+                            () -> {
+                                CooldownManager.removeCooldown(player.getUUID());
+                                player.displayClientMessage(Util.format(messages.tpCancelled), false);
+                            }
                     );
                 }
             }
