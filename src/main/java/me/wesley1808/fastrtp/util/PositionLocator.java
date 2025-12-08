@@ -52,7 +52,7 @@ public final class PositionLocator {
     }
 
     public static void update() {
-        if (LOCATORS.size() > 0) {
+        if (!LOCATORS.isEmpty()) {
             for (PositionLocator locator : LOCATORS.values()) {
                 locator.tick();
             }

@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec3;
 
@@ -36,16 +37,16 @@ public final class RandomTeleportCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(literal("rtp")
-                .requires(src -> !Config.instance().requirePermission || Permissions.check(src, Permission.COMMAND_RTP, 2))
+                .requires(src -> !Config.instance().requirePermission || Permissions.check(src, Permission.COMMAND_RTP, PermissionLevel.GAMEMASTERS))
                 .executes(ctx -> execute(ctx.getSource()))
 
                 .then(literal("reload")
-                        .requires(Permissions.require(Permission.COMMAND_RELOAD, 2))
+                        .requires(Permissions.require(Permission.COMMAND_RELOAD, PermissionLevel.GAMEMASTERS))
                         .executes(ctx -> reloadConfig(ctx.getSource()))
                 )
 
                 .then(argument("player", player())
-                        .requires(Permissions.require(Permission.COMMAND_RTP_ADVANCED, 2))
+                        .requires(Permissions.require(Permission.COMMAND_RTP_ADVANCED, PermissionLevel.GAMEMASTERS))
                         .executes(ctx -> execute(ctx.getSource(), getPlayer(ctx, "player")))
 
                         .then(argument("world", dimension())
@@ -155,7 +156,7 @@ public final class RandomTeleportCommand {
                     .replace("${x}", String.format("%.0f", pos.x))
                     .replace("${y}", String.format("%.0f", pos.y))
                     .replace("${z}", String.format("%.0f", pos.z))
-                    .replace("${world}", level.dimension().location().getPath())
+                    .replace("${world}", level.dimension().identifier().getPath())
             ));
         }
     }

@@ -7,7 +7,7 @@ import me.wesley1808.fastrtp.mixins.ServerChunkCacheAccessor;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerChunkCache;
@@ -55,7 +55,7 @@ public final class Util {
     public static ServerLevel getLevel(ServerPlayer player) {
         ServerLevel currentLevel = player.level();
 
-        ServerLevel redirect = parseLevel(currentLevel.getServer(), Config.instance().dimensionRedirects.get(currentLevel.dimension().location().toString()));
+        ServerLevel redirect = parseLevel(currentLevel.getServer(), Config.instance().dimensionRedirects.get(currentLevel.dimension().identifier().toString()));
         if (redirect != null) {
             return redirect;
         }
@@ -74,7 +74,7 @@ public final class Util {
             return null;
         }
 
-        ResourceLocation location = ResourceLocation.tryParse(dimension);
+        Identifier location = Identifier.tryParse(dimension);
         if (location == null) {
             return null;
         }
