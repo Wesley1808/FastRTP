@@ -37,4 +37,8 @@ public final class CooldownManager {
     public static void removeCooldown(UUID uuid) {
         COOLDOWNS.removeLong(uuid);
     }
+
+    public static void clearCooldowns() {
+        COOLDOWNS.clear();
+    }
 }

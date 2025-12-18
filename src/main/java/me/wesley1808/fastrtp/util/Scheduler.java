@@ -20,7 +20,9 @@ public final class Scheduler {
     }
 
     public static void schedule(long millis, Runnable runnable) {
-        SCHEDULER.schedule(runnable, millis, TimeUnit.MILLISECONDS);
+        if (!SCHEDULER.isShutdown()) {
+            SCHEDULER.schedule(runnable, millis, TimeUnit.MILLISECONDS);
+        }
     }
 
     public static void shutdown() {

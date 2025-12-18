@@ -200,4 +200,8 @@ public final class RandomTeleportCommand {
         source.sendSuccess(() -> Component.literal("Config reloaded!").withStyle(ChatFormatting.GREEN), false);
         return Command.SINGLE_SUCCESS;
     }
+
+    public static void clearLastTeleports() {
+        RTP_COORDS.clear();
+    }
 }
