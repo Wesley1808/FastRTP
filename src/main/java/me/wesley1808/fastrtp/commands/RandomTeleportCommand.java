@@ -2,6 +2,8 @@ package me.wesley1808.fastrtp.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -12,6 +14,9 @@ import me.wesley1808.fastrtp.config.ConfigHandler;
 import me.wesley1808.fastrtp.util.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.DimensionArgument;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -20,78 +25,98 @@ import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
-
-import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
-import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static net.minecraft.commands.Commands.argument;
-import static net.minecraft.commands.Commands.literal;
-import static net.minecraft.commands.arguments.DimensionArgument.dimension;
-import static net.minecraft.commands.arguments.DimensionArgument.getDimension;
-import static net.minecraft.commands.arguments.EntityArgument.getPlayer;
-import static net.minecraft.commands.arguments.EntityArgument.player;
 
 public final class RandomTeleportCommand {
     private static final Object2ObjectOpenHashMap<UUID, Pair<ServerLevel, Vec3>> RTP_COORDS = new Object2ObjectOpenHashMap<>();
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(literal("rtp")
+        var root = Commands.literal("rtp")
                 .requires(src -> !Config.instance().requirePermission || Permissions.check(src, Permission.COMMAND_RTP, PermissionLevel.GAMEMASTERS))
-                .executes(ctx -> execute(ctx.getSource()))
+                .executes(ctx -> execute(ctx.getSource(), Bypass.NONE));
 
-                .then(literal("reload")
-                        .requires(Permissions.require(Permission.COMMAND_RELOAD, PermissionLevel.GAMEMASTERS))
-                        .executes(ctx -> reloadConfig(ctx.getSource()))
-                )
-
-                .then(argument("player", player())
-                        .requires(Permissions.require(Permission.COMMAND_RTP_ADVANCED, PermissionLevel.GAMEMASTERS))
-                        .executes(ctx -> execute(ctx.getSource(), getPlayer(ctx, "player")))
-
-                        .then(argument("world", dimension())
-                                .executes(ctx -> execute(ctx.getSource(), getPlayer(ctx, "player"), getDimension(ctx, "world")))
-
-                                .then(argument("radius", integer(0))
-                                        .executes(ctx -> execute(ctx.getSource(), getPlayer(ctx, "player"), getDimension(ctx, "world"), getInteger(ctx, "radius")))
-
-                                        .then(argument("minRadius", integer(0))
-                                                .executes(ctx -> execute(ctx.getSource(), getPlayer(ctx, "player"), getDimension(ctx, "world"), getInteger(ctx, "radius"), getInteger(ctx, "minRadius")))
-                                        )
-                                )
-                        )
-                )
+        root.then(Commands.literal("reload")
+                .requires(Permissions.require(Permission.COMMAND_RELOAD, PermissionLevel.GAMEMASTERS))
+                .executes(ctx -> reloadConfig(ctx.getSource()))
         );
 
+        var advancedRtpRoot = Commands.argument("player", EntityArgument.player())
+                .requires(Permissions.require(Permission.COMMAND_RTP_ADVANCED, PermissionLevel.GAMEMASTERS))
+                .executes(ctx -> execute(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), Bypass.NONE))
+                .then(buildAdvancedRtpNode(Bypass.NONE));
+
+        for (Bypass bypass : Bypass.values()) {
+            if (bypass != Bypass.NONE) {
+                advancedRtpRoot.then(Commands.literal("bypass_%s".formatted(bypass.toString().toLowerCase(Locale.ROOT)))
+                        .executes(ctx -> execute(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), bypass))
+                        .then(buildAdvancedRtpNode(bypass))
+                );
+            }
+        }
+
+        root.then(advancedRtpRoot);
+
+        var node = dispatcher.register(root);
+        dispatcher.register(Commands.literal("fastrtp").redirect(node));
+
         if (Config.instance().rtpBackEnabled) {
-            dispatcher.register(literal("rtpback")
+            dispatcher.register(Commands.literal("rtpback")
                     .requires(Permissions.require(Permission.COMMAND_RTP_BACK, true))
                     .executes(ctx -> executeBack(ctx.getSource().getPlayerOrException()))
             );
         }
     }
 
-    private static int execute(CommandSourceStack source) throws CommandSyntaxException {
-        return execute(source, source.getPlayerOrException());
+    private static RequiredArgumentBuilder<CommandSourceStack, ?> buildAdvancedRtpNode(Bypass bypass) {
+        return Commands.argument("world", DimensionArgument.dimension())
+                .executes(ctx -> execute(
+                        ctx.getSource(),
+                        EntityArgument.getPlayer(ctx, "player"),
+                        DimensionArgument.getDimension(ctx, "world"),
+                        bypass
+                ))
+
+                .then(Commands.argument("radius", IntegerArgumentType.integer(0))
+                        .executes(ctx -> execute(
+                                ctx.getSource(),
+                                EntityArgument.getPlayer(ctx, "player"),
+                                DimensionArgument.getDimension(ctx, "world"),
+                                IntegerArgumentType.getInteger(ctx, "radius"),
+                                bypass
+                        ))
+
+                        .then(Commands.argument("minRadius", IntegerArgumentType.integer(0))
+                                .executes(ctx -> execute(
+                                        ctx.getSource(),
+                                        EntityArgument.getPlayer(ctx, "player"),
+                                        DimensionArgument.getDimension(ctx, "world"),
+                                        IntegerArgumentType.getInteger(ctx, "radius"),
+                                        IntegerArgumentType.getInteger(ctx, "minRadius"),
+                                        bypass
+                                ))
+                        )
+                );
     }
 
-    private static int execute(CommandSourceStack source, ServerPlayer player) {
-        return execute(source, player, Util.getLevel(player));
+    private static int execute(CommandSourceStack source, Bypass bypass) throws CommandSyntaxException {
+        return execute(source, source.getPlayerOrException(), bypass);
     }
 
-    private static int execute(CommandSourceStack source, ServerPlayer player, ServerLevel level) {
-        return execute(source, player, level, Util.getRadius(level));
+    private static int execute(CommandSourceStack source, ServerPlayer player, Bypass bypass) {
+        return execute(source, player, Util.getLevel(player), bypass);
     }
 
-    private static int execute(CommandSourceStack source, ServerPlayer player, ServerLevel level, int radius) {
-        return execute(source, player, level, radius, Config.instance().minRadius);
+    private static int execute(CommandSourceStack source, ServerPlayer player, ServerLevel level, Bypass bypass) {
+        return execute(source, player, level, Util.getRadius(level), bypass);
     }
 
-    private static int execute(CommandSourceStack source, ServerPlayer player, ServerLevel level, int radius, int minRadius) {
-        return execute(source, player, level, radius, minRadius, source.getPlayer() != player);
+    private static int execute(CommandSourceStack source, ServerPlayer player, ServerLevel level, int radius, Bypass bypass) {
+        return execute(source, player, level, radius, Config.instance().minRadius, bypass);
     }
 
-    private static int execute(CommandSourceStack source, ServerPlayer player, ServerLevel level, int radius, int minRadius, boolean force) {
+    private static int execute(CommandSourceStack source, ServerPlayer player, ServerLevel level, int radius, int minRadius, Bypass bypass) {
         if (minRadius > radius) {
             source.sendFailure(Component.literal("The minimum radius cannot be larger than the maximum radius!"));
             return 0;
@@ -103,13 +128,13 @@ public final class RandomTeleportCommand {
         }
 
         Config.Messages messages = Config.instance().messages;
-        if (!force && CooldownManager.hasCooldown(player.getUUID())) {
+        if (!bypass.bypassesCooldown() && CooldownManager.hasCooldown(player.getUUID())) {
             String seconds = String.valueOf(CooldownManager.getCooldownInSeconds(player.getUUID()));
             player.displayClientMessage(Util.format(messages.rtpOnCooldown.replace("${seconds}", seconds)), false);
             return 0;
         }
 
-        String error = force ? null : Util.mayTeleport(player);
+        String error = bypass.bypassesChecks() ? null : Util.mayTeleport(player);
         if (error != null) {
             player.sendSystemMessage(Util.format(messages.preventedRtp.replace("${reason}", error)));
             return 0;
@@ -129,7 +154,7 @@ public final class RandomTeleportCommand {
                 long elapsedTime = System.currentTimeMillis() - startTime;
                 player.displayClientMessage(Util.format(messages.rtpLocFound.replace("${seconds}", String.format("%.1f", elapsedTime / 1000F))), true);
 
-                if (force || !Config.instance().useStrictTeleportCheck) {
+                if (bypass.bypassesChecks() || !Config.instance().useStrictTeleportCheck) {
                     teleportPlayer(player, level, pos);
                 } else {
                     Scheduler.scheduleTeleport(player,
@@ -203,5 +228,20 @@ public final class RandomTeleportCommand {
 
     public static void clearLastTeleports() {
         RTP_COORDS.clear();
+    }
+
+    private enum Bypass {
+        ALL,
+        NONE,
+        CHECKS,
+        COOLDOWN;
+
+        private boolean bypassesChecks() {
+            return this == ALL || this == CHECKS;
+        }
+
+        private boolean bypassesCooldown() {
+            return this == ALL || this == COOLDOWN;
+        }
     }
 }
