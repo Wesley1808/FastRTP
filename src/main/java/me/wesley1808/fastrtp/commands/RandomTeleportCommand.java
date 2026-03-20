@@ -130,7 +130,7 @@ public final class RandomTeleportCommand {
         Config.Messages messages = Config.instance().messages;
         if (!bypass.bypassesCooldown() && CooldownManager.hasCooldown(player.getUUID())) {
             String seconds = String.valueOf(CooldownManager.getCooldownInSeconds(player.getUUID()));
-            player.displayClientMessage(Util.format(messages.rtpOnCooldown.replace("${seconds}", seconds)), false);
+            player.sendSystemMessage(Util.format(messages.rtpOnCooldown.replace("${seconds}", seconds)), false);
             return 0;
         }
 
@@ -140,7 +140,7 @@ public final class RandomTeleportCommand {
             return 0;
         }
 
-        player.displayClientMessage(Util.format(messages.rtpStartSearch), true);
+        player.sendSystemMessage(Util.format(messages.rtpStartSearch), true);
         CooldownManager.addCooldown(player);
 
         long startTime = System.currentTimeMillis();
@@ -152,7 +152,7 @@ public final class RandomTeleportCommand {
                 CooldownManager.removeCooldown(player.getUUID());
             } else {
                 long elapsedTime = System.currentTimeMillis() - startTime;
-                player.displayClientMessage(Util.format(messages.rtpLocFound.replace("${seconds}", String.format("%.1f", elapsedTime / 1000F))), true);
+                player.sendSystemMessage(Util.format(messages.rtpLocFound.replace("${seconds}", String.format("%.1f", elapsedTime / 1000F))), true);
 
                 if (bypass.bypassesChecks() || !Config.instance().useStrictTeleportCheck) {
                     teleportPlayer(player, level, pos);
@@ -161,7 +161,7 @@ public final class RandomTeleportCommand {
                             () -> teleportPlayer(player, level, pos),
                             () -> {
                                 CooldownManager.removeCooldown(player.getUUID());
-                                player.displayClientMessage(Util.format(messages.tpCancelled), false);
+                                player.sendSystemMessage(Util.format(messages.tpCancelled), false);
                             }
                     );
                 }
@@ -208,13 +208,13 @@ public final class RandomTeleportCommand {
         Vec3 pos = pair.right();
         ServerLevel level = pair.left();
 
-        level.getChunkSource().addTicketWithRadius(RegistryUtil.PRE_TELEPORT, new ChunkPos(BlockPos.containing(pos)), 1);
+        level.getChunkSource().addTicketWithRadius(RegistryUtil.PRE_TELEPORT, ChunkPos.containing(BlockPos.containing(pos)), 1);
         Scheduler.scheduleTeleport(player, () -> {
             player.teleportTo(level, pos.x, pos.y, pos.z, Set.of(), player.getYRot(), player.getXRot(), true);
             player.connection.resetPosition();
             player.sendSystemMessage(Util.format(messages.rtpBackSuccess));
         }, () -> {
-            player.displayClientMessage(Util.format(messages.tpCancelled), false);
+            player.sendSystemMessage(Util.format(messages.tpCancelled), false);
         });
 
         return 1;

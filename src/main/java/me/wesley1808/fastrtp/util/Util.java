@@ -45,11 +45,11 @@ public final class Util {
     @Nullable
     private static ChunkHolder getChunkHolder(ServerChunkCache chunkCache, int chunkX, int chunkZ) {
         ServerChunkCacheAccessor accessor = (ServerChunkCacheAccessor) chunkCache;
-        return accessor.getHolder(ChunkPos.asLong(chunkX, chunkZ));
+        return accessor.getHolder(ChunkPos.pack(chunkX, chunkZ));
     }
 
     public static Component format(String string) {
-        return PARSER.parseText(string, ParserContext.of());
+        return PARSER.parseComponent(string, ParserContext.of());
     }
 
     public static ServerLevel getLevel(ServerPlayer player) {

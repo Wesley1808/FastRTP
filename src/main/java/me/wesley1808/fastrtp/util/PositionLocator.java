@@ -31,7 +31,7 @@ import java.util.function.Consumer;
 public final class PositionLocator {
     private static final Object2ObjectOpenHashMap<UUID, PositionLocator> LOCATORS = new Object2ObjectOpenHashMap<>();
     private static final ObjectOpenHashSet<UUID> PENDING_REMOVAL = new ObjectOpenHashSet<>();
-    private static final RandomSource RANDOM = RandomSource.createNewThreadLocalInstance();
+    private static final RandomSource RANDOM = RandomSource.createThreadLocalInstance();
     private static final int MAX_SAFETY_CHECK_RADIUS = 4;
     private static final int MAX_ATTEMPTS = 256;
     private final ServerLevel level;
@@ -78,7 +78,7 @@ public final class PositionLocator {
 
     private void tick() {
         if (System.currentTimeMillis() <= this.stopTime) {
-            LevelChunk chunk = Util.getChunkIfLoaded(this.level, this.queuedPos.x, this.queuedPos.z);
+            LevelChunk chunk = Util.getChunkIfLoaded(this.level, this.queuedPos.x(), this.queuedPos.z());
             if (chunk != null) {
                 this.onChunkLoaded(chunk);
             }
