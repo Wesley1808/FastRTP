@@ -55,6 +55,7 @@ public class FastRTP implements ModInitializer {
         } else {
             CooldownManager.clearCooldowns();
             RandomTeleportCommand.clearLastTeleports();
+            PositionLocator.clear();
         }
     }
 

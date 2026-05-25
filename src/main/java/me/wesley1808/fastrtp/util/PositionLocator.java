@@ -47,6 +47,10 @@ public final class PositionLocator {
     private int x;
     private int z;
 
+    public static void clear() {
+        LOCATORS.clear();
+    }
+
     public static boolean isLocating(ServerPlayer player) {
         return LOCATORS.containsKey(player.getUUID());
     }
