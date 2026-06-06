@@ -8,7 +8,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectObjectImmutablePair;
-import me.lucko.fabric.api.permissions.v0.Permissions;
 import me.wesley1808.fastrtp.config.Config;
 import me.wesley1808.fastrtp.config.ConfigHandler;
 import me.wesley1808.fastrtp.util.*;
@@ -34,16 +33,16 @@ public final class RandomTeleportCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         var root = Commands.literal("rtp")
-                .requires(src -> !Config.instance().requirePermission || Permissions.check(src, Permission.COMMAND_RTP, PermissionLevel.GAMEMASTERS))
+                .requires(src -> !Config.instance().requirePermission || RtpPerms.check(src, RtpPerms.COMMAND_RTP, PermissionLevel.GAMEMASTERS))
                 .executes(ctx -> execute(ctx.getSource(), Bypass.NONE));
 
         root.then(Commands.literal("reload")
-                .requires(Permissions.require(Permission.COMMAND_RELOAD, PermissionLevel.GAMEMASTERS))
+                .requires(RtpPerms.require(RtpPerms.COMMAND_RELOAD, PermissionLevel.GAMEMASTERS))
                 .executes(ctx -> reloadConfig(ctx.getSource()))
         );
 
         var advancedRtpRoot = Commands.argument("player", EntityArgument.player())
-                .requires(Permissions.require(Permission.COMMAND_RTP_ADVANCED, PermissionLevel.GAMEMASTERS))
+                .requires(RtpPerms.require(RtpPerms.COMMAND_RTP_ADVANCED, PermissionLevel.GAMEMASTERS))
                 .executes(ctx -> execute(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), Bypass.NONE))
                 .then(buildAdvancedRtpNode(Bypass.NONE));
 
@@ -63,7 +62,7 @@ public final class RandomTeleportCommand {
 
         if (Config.instance().rtpBackEnabled) {
             dispatcher.register(Commands.literal("rtpback")
-                    .requires(Permissions.require(Permission.COMMAND_RTP_BACK, true))
+                    .requires(RtpPerms.require(RtpPerms.COMMAND_RTP_BACK, true))
                     .executes(ctx -> executeBack(ctx.getSource().getPlayerOrException()))
             );
         }

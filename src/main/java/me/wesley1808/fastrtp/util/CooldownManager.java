@@ -1,7 +1,6 @@
 package me.wesley1808.fastrtp.util;
 
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
-import me.lucko.fabric.api.permissions.v0.Permissions;
 import me.wesley1808.fastrtp.config.Config;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionLevel;
@@ -29,7 +28,7 @@ public final class CooldownManager {
 
     public static void addCooldown(ServerPlayer player) {
         int cooldown = Config.instance().cooldown;
-        if (cooldown != -1 && !Permissions.check(player.createCommandSourceStack(), Permission.BYPASS_COOLDOWN, PermissionLevel.GAMEMASTERS)) {
+        if (cooldown != -1 && !RtpPerms.check(player.createCommandSourceStack(), RtpPerms.BYPASS_COOLDOWN, PermissionLevel.GAMEMASTERS)) {
             COOLDOWNS.put(player.getUUID(), System.currentTimeMillis() + (cooldown * 1000L));
         }
     }
