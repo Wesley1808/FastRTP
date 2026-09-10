@@ -192,7 +192,7 @@ public final class PositionLocator {
 
     private boolean isSafeSurroundingBelowPlayer(BlockState state) {
         Block block = state.getBlock();
-        return (state.blocksMotion() || block == Blocks.SNOW) &&
+        return (state.is(BlockTags.ENTITIES_CAN_TELEPORT_TO) || block == Blocks.SNOW) &&
                block != Blocks.CACTUS &&
                block != Blocks.MAGMA_BLOCK;
     }
