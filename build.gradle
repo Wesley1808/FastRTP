@@ -1,6 +1,6 @@
 plugins {
     id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT'
-    id "me.modmuss50.mod-publish-plugin" version "1.1.0"
+    id "me.modmuss50.mod-publish-plugin" version "2.2.0"
     id 'maven-publish'
 }
 
@@ -81,6 +81,7 @@ publishMods {
         minecraftVersions.add(project.minecraft_version)
         projectId = "890961"
         displayName = customDisplayName
+        server = true
     }
 
     modrinth("Modrinth") {
