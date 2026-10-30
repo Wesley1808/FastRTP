@@ -53,11 +53,7 @@ public class Config {
         public String rtpOnCooldown = "<red>[✖] <gold>Please wait <yellow>${seconds} <gold>seconds before using the RTP again!";
         public String preventedRtp = "<red>[✖] Could not start random teleport.\nReason: ${reason}";
 
-        public String rtpBackSuccess = "<dark_aqua>Teleported back to your last random teleport!";
         public String rtpBackLocNotFound = "<red>[✖] You don't have any recent random teleports.";
         public String preventedRtpBack = "<red>[✖] Unable to teleport back to your last RTP location.\nReason: ${reason}";
-
-        public String tpSecondsLeft = "<yellow>Teleporting in ${seconds} seconds...";
-        public String tpCancelled = "<red>[✖] Teleportation was cancelled.";
     }
 }

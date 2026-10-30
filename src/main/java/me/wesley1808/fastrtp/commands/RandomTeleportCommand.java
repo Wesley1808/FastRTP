@@ -10,22 +10,25 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectObjectImmutablePair;
 import me.wesley1808.fastrtp.config.Config;
 import me.wesley1808.fastrtp.config.ConfigHandler;
-import me.wesley1808.fastrtp.util.*;
+import me.wesley1808.fastrtp.util.CooldownManager;
+import me.wesley1808.fastrtp.util.PositionLocator;
+import me.wesley1808.fastrtp.util.RtpPerms;
+import me.wesley1808.fastrtp.util.Util;
+import me.wesley1808.teleportapi.api.TeleportBuilder;
+import me.wesley1808.teleportapi.api.TeleportManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionLevel;
-import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.entity.Relative;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Locale;
-import java.util.Set;
 import java.util.UUID;
 
 public final class RandomTeleportCommand {
@@ -121,7 +124,7 @@ public final class RandomTeleportCommand {
             return 0;
         }
 
-        if (PositionLocator.isLocating(player) || !Scheduler.canSchedule(player.getUUID())) {
+        if (PositionLocator.isLocating(player) || TeleportManager.isTeleporting(player)) {
             // If the player is already locating a random position, don't start a new one.
             return 0;
         }
@@ -151,43 +154,41 @@ public final class RandomTeleportCommand {
                 CooldownManager.removeCooldown(player.getUUID());
             } else {
                 long elapsedTime = System.currentTimeMillis() - startTime;
-                player.sendSystemMessage(Util.format(messages.rtpLocFound.replace("${seconds}", String.format("%.1f", elapsedTime / 1000F))), true);
+
+                TeleportBuilder builder = TeleportManager.builder(player)
+                        .to(level, pos)
+                        .relatives(Relative.ROTATION)
+                        .label("wilderness")
+                        .onFinished((success) -> {
+                            if (success) {
+                                RTP_COORDS.put(player.getUUID(), new ObjectObjectImmutablePair<>(level, pos));
+
+                                player.sendSystemMessage(Util.format(Config.instance().messages.rtpTeleportPlayer
+                                        .replace("${x}", String.format("%.0f", pos.x))
+                                        .replace("${y}", String.format("%.0f", pos.y))
+                                        .replace("${z}", String.format("%.0f", pos.z))
+                                        .replace("${world}", level.dimension().identifier().getPath())
+                                ));
+                            } else {
+                                CooldownManager.removeCooldown(player.getUUID());
+                            }
+                        });
 
                 if (bypass.bypassesChecks() || !Config.instance().useStrictTeleportCheck) {
-                    teleportPlayer(player, level, pos);
-                } else {
-                    Scheduler.scheduleTeleport(player,
-                            () -> teleportPlayer(player, level, pos),
-                            () -> {
-                                CooldownManager.removeCooldown(player.getUUID());
-                                player.sendSystemMessage(Util.format(messages.tpCancelled), false);
-                            }
-                    );
+                    builder.instant().silent(true);
+                    player.sendSystemMessage(Util.format(messages.rtpLocFound.replace("${seconds}", String.format("%.1f", elapsedTime / 1000F))), true);
                 }
+
+                builder.execute();
             }
         });
 
         return 1;
     }
 
-    private static void teleportPlayer(ServerPlayer player, ServerLevel level, Vec3 pos) {
-        if (player.isAlive()) {
-            player.teleportTo(level, pos.x, pos.y, pos.z, Set.of(), player.getYRot(), player.getXRot(), true);
-            player.connection.resetPosition();
-            RTP_COORDS.put(player.getUUID(), new ObjectObjectImmutablePair<>(level, pos));
-
-            player.sendSystemMessage(Util.format(Config.instance().messages.rtpTeleportPlayer
-                    .replace("${x}", String.format("%.0f", pos.x))
-                    .replace("${y}", String.format("%.0f", pos.y))
-                    .replace("${z}", String.format("%.0f", pos.z))
-                    .replace("${world}", level.dimension().identifier().getPath())
-            ));
-        }
-    }
-
     private static int executeBack(ServerPlayer player) {
         UUID uuid = player.getUUID();
-        if (!Scheduler.canSchedule(uuid)) {
+        if (TeleportManager.isTeleporting(player)) {
             return 0;
         }
 
@@ -207,14 +208,11 @@ public final class RandomTeleportCommand {
         Vec3 pos = pair.right();
         ServerLevel level = pair.left();
 
-        level.getChunkSource().addTicketWithRadius(RegistryUtil.PRE_TELEPORT, ChunkPos.containing(BlockPos.containing(pos)), 1);
-        Scheduler.scheduleTeleport(player, () -> {
-            player.teleportTo(level, pos.x, pos.y, pos.z, Set.of(), player.getYRot(), player.getXRot(), true);
-            player.connection.resetPosition();
-            player.sendSystemMessage(Util.format(messages.rtpBackSuccess));
-        }, () -> {
-            player.sendSystemMessage(Util.format(messages.tpCancelled), false);
-        });
+        TeleportManager.builder(player)
+                .to(level, pos)
+                .relatives(Relative.ROTATION)
+                .label("your last random teleport")
+                .execute();
 
         return 1;
     }

@@ -10,6 +10,7 @@ group = project.maven_group
 repositories {
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
     maven { url "https://maven.nucleoid.xyz/" }
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -20,8 +21,9 @@ dependencies {
     // Fabric API
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-    // Placeholder API
+    // Included Libraries
     implementation(include("eu.pb4:placeholder-api:${project.placeholder_api_version}"))
+    implementation(include("com.github.Wesley1808:TeleportAPI:${project.teleport_api_version}")) { transitive = false }
 }
 
 processResources {

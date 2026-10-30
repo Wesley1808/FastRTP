@@ -3,14 +3,11 @@ package me.wesley1808.fastrtp.util;
 import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.parsers.NodeParser;
 import me.wesley1808.fastrtp.config.Config;
-import me.wesley1808.fastrtp.mixins.ServerChunkCacheAccessor;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ChunkHolder;
-import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
@@ -21,8 +18,6 @@ import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.warden.Warden;
-import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,19 +29,6 @@ public final class Util {
             .quickText()
             .requireSafe()
             .build();
-
-
-    @Nullable
-    public static LevelChunk getChunkIfLoaded(ServerLevel level, int chunkX, int chunkZ) {
-        final ChunkHolder holder = getChunkHolder(level.getChunkSource(), chunkX, chunkZ);
-        return holder != null ? holder.getFullChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK).orElse(null) : null;
-    }
-
-    @Nullable
-    private static ChunkHolder getChunkHolder(ServerChunkCache chunkCache, int chunkX, int chunkZ) {
-        ServerChunkCacheAccessor accessor = (ServerChunkCacheAccessor) chunkCache;
-        return accessor.getHolder(ChunkPos.pack(chunkX, chunkZ));
-    }
 
     public static Component format(String string) {
         return PARSER.parseComponent(string, ParserContext.of());
