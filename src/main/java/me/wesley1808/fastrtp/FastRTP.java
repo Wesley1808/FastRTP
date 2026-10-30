@@ -31,7 +31,6 @@ public class FastRTP implements ModInitializer {
 
         CommandRegistrationCallback.EVENT.register(this::onRegisterCommands);
         ServerLifecycleEvents.SERVER_STOPPED.register(this::onServerStopped);
-        ServerTickEvents.END_SERVER_TICK.register(this::onTick);
 
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
             ClientLifecycleEvents.CLIENT_STOPPING.register(this::onClientStopped);
@@ -39,10 +38,6 @@ public class FastRTP implements ModInitializer {
 
         ConfigHandler.load();
         ConfigHandler.save();
-    }
-
-    private void onTick(MinecraftServer server) {
-        PositionLocator.update();
     }
 
     private void onRegisterCommands(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess, Commands.CommandSelection environment) {

@@ -1,12 +1,11 @@
 package me.wesley1808.fastrtp.util;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import me.wesley1808.fastrtp.FastRTP;
 import me.wesley1808.fastrtp.config.Config;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,16 +23,17 @@ import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public final class PositionLocator {
-    private static final Object2ObjectOpenHashMap<UUID, PositionLocator> LOCATORS = new Object2ObjectOpenHashMap<>();
-    private static final ObjectOpenHashSet<UUID> PENDING_REMOVAL = new ObjectOpenHashSet<>();
+    private static final ObjectOpenHashSet<UUID> LOCATORS = new ObjectOpenHashSet<>();
     private static final RandomSource RANDOM = RandomSource.createThreadLocalInstance();
     private static final int MAX_SAFETY_CHECK_RADIUS = 4;
-    private static final int MAX_ATTEMPTS = 256;
     private final ServerLevel level;
     private final UUID uuid;
     private final int minRadius;
@@ -41,32 +41,17 @@ public final class PositionLocator {
     private final int centerX;
     private final int centerZ;
     private Consumer<Vec3> callback;
-    private ChunkPos queuedPos;
+    private long startTime;
     private long stopTime;
-    private int attempts;
-    private int x;
-    private int z;
+    public int fastCheckFails;
+    public int chunkCheckFails;
 
     public static void clear() {
         LOCATORS.clear();
     }
 
     public static boolean isLocating(ServerPlayer player) {
-        return LOCATORS.containsKey(player.getUUID());
-    }
-
-    public static void update() {
-        if (!LOCATORS.isEmpty()) {
-            for (PositionLocator locator : LOCATORS.values()) {
-                locator.tick();
-            }
-
-            for (UUID uuid : PENDING_REMOVAL) {
-                LOCATORS.remove(uuid);
-            }
-
-            PENDING_REMOVAL.clear();
-        }
+        return LOCATORS.contains(player.getUUID());
     }
 
     public PositionLocator(ServerLevel level, UUID uuid, int radius, int minRadius) {
@@ -80,69 +65,96 @@ public final class PositionLocator {
         this.centerZ = (int) border.getCenterZ() >> 4;
     }
 
-    private void tick() {
-        if (System.currentTimeMillis() <= this.stopTime) {
-            LevelChunk chunk = Util.getChunkIfLoaded(this.level, this.queuedPos.x(), this.queuedPos.z());
-            if (chunk != null) {
-                this.onChunkLoaded(chunk);
-            }
-        } else {
-            this.onChunkLoaded(null);
-        }
+    public void findPosition(Consumer<Vec3> callback) {
+        LOCATORS.add(this.uuid);
+        this.callback = callback;
+        this.startTime = System.currentTimeMillis();
+        this.stopTime = this.startTime + 10000;
+        this.newPosition();
     }
 
-    public void findPosition(Consumer<Vec3> callback) {
-        this.callback = callback;
-        this.stopTime = System.currentTimeMillis() + 10000;
-        this.newPosition();
+    private void onFinished(@Nullable Vec3 pos) {
+        LOCATORS.remove(this.uuid);
+        this.callback.accept(pos);
+    }
+
+    private void onComplete(Vec3 pos) {
+        if (Config.instance().debugLogging) {
+            FastRTP.LOGGER.info("[FastRTP] Completed RTP request in {}ms. ({} skipped chunks, {} unsafe chunks)",
+                    System.currentTimeMillis() - this.startTime,
+                    this.fastCheckFails,
+                    this.chunkCheckFails
+            );
+        }
+        this.onFinished(pos);
+    }
+
+    private void onFailure(String reason) {
+        if (Config.instance().debugLogging) {
+            FastRTP.LOGGER.info("[FastRTP] RTP failed: {}. ({} skipped chunks, {} unsafe chunks)",
+                    reason,
+                    this.fastCheckFails,
+                    this.chunkCheckFails
+            );
+        }
+        this.onFinished(null);
     }
 
     private void newPosition() {
-        if (++this.attempts > MAX_ATTEMPTS || System.currentTimeMillis() > this.stopTime) {
-            this.callback.accept(null);
+        if (this.chunkCheckFails >= 256) {
+            this.onFailure("too many unsafe chunks");
             return;
         }
 
-        ChunkPos pos = RANDOM.nextBoolean()
-                ? new ChunkPos(this.nextRandomValueWithMinimum(this.centerX), this.nextRandomValue(this.centerZ))
-                : new ChunkPos(this.nextRandomValue(this.centerX), this.nextRandomValueWithMinimum(this.centerZ));
-
-        this.x = pos.getMiddleBlockX();
-        this.z = pos.getMiddleBlockZ();
-
-        // Quick checks to skip a lot of unnecessary chunk loading.
-        if (this.isValid(pos)) {
-            this.queueChunk(pos);
-        } else {
-            this.newPosition();
+        if (System.currentTimeMillis() > this.stopTime) {
+            this.onFailure("took too long");
+            return;
         }
+
+        for (int attempts = 0; attempts < 10000; ++attempts) {
+            ChunkPos pos = RANDOM.nextBoolean()
+                    ? new ChunkPos(this.nextRandomValueWithMinimum(this.centerX), this.nextRandomValue(this.centerZ))
+                    : new ChunkPos(this.nextRandomValue(this.centerX), this.nextRandomValueWithMinimum(this.centerZ));
+
+            // Quick checks to skip a lot of unnecessary chunk loading.
+            if (this.isValid(pos)) {
+                this.queueChunk(pos);
+                return;
+            }
+
+            this.fastCheckFails++;
+        }
+
+        this.onFailure("too many skipped chunks");
     }
 
     private void queueChunk(ChunkPos pos) {
-        this.level.getChunkSource().addTicketWithRadius(RegistryUtil.LOCATE, pos, 0);
-        this.queuedPos = pos;
-        PENDING_REMOVAL.remove(this.uuid);
-        LOCATORS.put(this.uuid, this);
+        CompletableFuture<?> chunkLoadFuture = this.level.getChunkSource().addTicketAndLoadWithRadius(RegistryUtil.LOCATE, pos, 0);
+        chunkLoadFuture.thenAcceptAsync(_ -> {
+            LevelChunk chunk = this.level.getChunkSource().getChunkNow(pos.x(), pos.z());
+            if (chunk == null) {
+                this.onFailure("chunk load at [%d, %d] failed".formatted(pos.x(), pos.z()));
+                return;
+            }
+
+            this.onChunkLoaded(chunk);
+        }, this.level.getServer());
     }
 
     private void onChunkLoaded(LevelChunk chunk) {
-        PENDING_REMOVAL.add(this.uuid);
-
-        if (chunk == null) {
-            this.callback.accept(null);
-            return;
-        }
-
-        Vec3 pos = this.findSafePositionInChunk(chunk, this.x, this.z);
+        Vec3 pos = this.findSafePositionInChunk(chunk);
         if (pos != null) {
-            this.callback.accept(pos);
+            this.onComplete(pos);
             return;
         }
 
+        this.chunkCheckFails++;
         this.newPosition();
     }
 
-    private Vec3 findSafePositionInChunk(LevelChunk chunk, int centerX, int centerZ) {
+    private Vec3 findSafePositionInChunk(LevelChunk chunk) {
+        int centerX = chunk.getPos().getMiddleBlockX();
+        int centerZ = chunk.getPos().getMiddleBlockZ();
         int negativeDiff = 8 - Mth.clamp(Config.instance().safetyCheckRadius, 1, MAX_SAFETY_CHECK_RADIUS);
         int positiveDiff = negativeDiff - 1;
 
@@ -228,7 +240,7 @@ public final class PositionLocator {
 
     private boolean isValid(ChunkPos pos) {
         if (this.level.getWorldBorder().isWithinBounds(pos)) {
-            return this.isBiomeValid(this.level.getBiome(new BlockPos(this.x, this.level.getLogicalHeight(), this.z)));
+            return this.isBiomeValid(this.level.getBiome(pos.getMiddleBlockPosition(this.level.getLogicalHeight())));
         }
         return false;
     }
@@ -240,8 +252,8 @@ public final class PositionLocator {
             }
         }
 
-        ResourceKey<Biome> key = this.level.registryAccess().lookupOrThrow(Registries.BIOME).getResourceKey(biome.value()).orElse(null);
-        return !Config.instance().blackListedBiomes.contains(key);
+        Optional<ResourceKey<Biome>> key = biome.unwrapKey();
+        return key.isEmpty() || !Config.instance().blackListedBiomes.contains(key.get());
     }
 
     private int nextRandomValue(int center) {
