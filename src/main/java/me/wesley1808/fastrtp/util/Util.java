@@ -3,6 +3,7 @@ package me.wesley1808.fastrtp.util;
 import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.parsers.NodeParser;
 import me.wesley1808.fastrtp.config.Config;
+import me.wesley1808.teleportapi.api.TeleportManager;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -12,9 +13,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntitySelector;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.warden.Warden;
@@ -75,49 +73,56 @@ public final class Util {
     }
 
     @Nullable
-    public static String mayTeleport(ServerPlayer player) {
-        if (player.gameMode.isSurvival() && Config.instance().useStrictTeleportCheck) {
+    public static String mayTeleport(ServerPlayer player, boolean useStrictCheck) {
+        if (TeleportManager.isTeleporting(player)) {
+            return "You are already teleporting!";
+        }
+
+        if (useStrictCheck && player.gameMode.isSurvival()) {
             if (player.hasEffect(MobEffects.LEVITATION)) {
-                return "Levitation Effect";
+                return "You cannot teleport while levitating!";
             }
 
             if (player.hasEffect(MobEffects.DARKNESS)) {
-                return "Darkness Effect";
+                return "You cannot teleport while affected by darkness!";
             }
 
-            List<Monster> monsters = player.level().getEntities(EntityTypeTest.forClass(Monster.class), player.getBoundingBox().inflate(64D), EntitySelector.NO_SPECTATORS);
-            for (Monster monster : monsters) {
-                if (isTargeted(player, monster)) {
-                    if (monster instanceof Warden) {
-                        return "Hunted by warden";
-                    }
+            return isBeingHunted(player, 24);
+        }
+        return null;
+    }
 
-                    float distance = player.distanceTo(monster);
-                    if (distance < 24 && monster.getSensing().hasLineOfSight(player)) {
-                        return String.format("Hunted by %s (%.0f blocks away)", EntityType.getKey(monster.getType()).getPath(), distance);
-                    }
-                }
+    private static String isBeingHunted(ServerPlayer player, int huntRange) {
+        List<Monster> monsters = player.level().getEntities(
+                EntityTypeTest.forClass(Monster.class),
+                player.getBoundingBox().inflate(64),
+                EntitySelector.NO_SPECTATORS
+        );
+
+        int huntRangeSqr = huntRange * huntRange;
+        for (Monster monster : monsters) {
+            boolean isTargetedBy = monster.getTarget() == player || (
+                    monster.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET) &&
+                    monster.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null) == player
+            );
+
+            if (!isTargetedBy && monster instanceof Warden warden) {
+                isTargetedBy = warden.getAngerManagement().getActiveEntity().orElse(null) == player;
+            }
+
+            if (isTargetedBy && canHunt(monster, player, huntRangeSqr)) {
+                return "You cannot teleport while there are monsters hunting you!";
             }
         }
 
         return null;
     }
 
-    public static boolean isTargeted(ServerPlayer target, Mob mob) {
-        boolean isTargeted = mob.getTarget() == target;
-
-        // Check the memory for mobs that don't use the target selector.
-        if (!isTargeted) {
-            Brain<?> brain = mob.getBrain();
-            MemoryModuleType<?> module = MemoryModuleType.ATTACK_TARGET;
-            isTargeted = brain.hasMemoryValue(module) && brain.getMemory(module).orElse(null) == target;
+    private static boolean canHunt(Monster monster, ServerPlayer player, int huntRangeSqr) {
+        if (monster instanceof Warden) {
+            return true;
         }
 
-        // Check if the mob is a warden that is sniffing out the player.
-        if (!isTargeted && mob instanceof Warden warden) {
-            isTargeted = warden.getAngerManagement().getActiveEntity().orElse(null) == target;
-        }
-
-        return isTargeted;
+        return player.distanceToSqr(monster) < huntRangeSqr && monster.getSensing().hasLineOfSight(player);
     }
 }

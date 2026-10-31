@@ -124,7 +124,7 @@ public final class RandomTeleportCommand {
             return 0;
         }
 
-        if (PositionLocator.isLocating(player) || TeleportManager.isTeleporting(player)) {
+        if (PositionLocator.isLocating(player)) {
             // If the player is already locating a random position, don't start a new one.
             return 0;
         }
@@ -136,7 +136,7 @@ public final class RandomTeleportCommand {
             return 0;
         }
 
-        String error = bypass.bypassesChecks() ? null : Util.mayTeleport(player);
+        String error = Util.mayTeleport(player, bypass.useStrictCheck());
         if (error != null) {
             player.sendSystemMessage(Util.format(messages.preventedRtp.replace("${reason}", error)));
             return 0;
@@ -175,7 +175,7 @@ public final class RandomTeleportCommand {
                         });
 
                 if (bypass.bypassesChecks() || !Config.instance().useStrictTeleportCheck) {
-                    builder.instant().silent(true);
+                    builder.instant().silenceTeleportMessage();
                     player.sendSystemMessage(Util.format(messages.rtpLocFound.replace("${seconds}", String.format("%.1f", elapsedTime / 1000F))), true);
                 }
 
@@ -188,10 +188,6 @@ public final class RandomTeleportCommand {
 
     private static int executeBack(ServerPlayer player) {
         UUID uuid = player.getUUID();
-        if (TeleportManager.isTeleporting(player)) {
-            return 0;
-        }
-
         Config.Messages messages = Config.instance().messages;
         Pair<ServerLevel, Vec3> pair = RTP_COORDS.get(uuid);
         if (pair == null) {
@@ -199,7 +195,7 @@ public final class RandomTeleportCommand {
             return 0;
         }
 
-        String error = Util.mayTeleport(player);
+        String error = Util.mayTeleport(player, Config.instance().useStrictTeleportCheck);
         if (error != null) {
             player.sendSystemMessage(Util.format(messages.preventedRtpBack.replace("${reason}", error)));
             return 0;
@@ -232,6 +228,10 @@ public final class RandomTeleportCommand {
         NONE,
         CHECKS,
         COOLDOWN;
+
+        private boolean useStrictCheck() {
+            return !this.bypassesChecks() && Config.instance().useStrictTeleportCheck;
+        }
 
         private boolean bypassesChecks() {
             return this == ALL || this == CHECKS;
