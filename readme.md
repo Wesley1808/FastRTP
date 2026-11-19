@@ -20,8 +20,12 @@ The configuration file can be found in `/config/fast-rtp.json`
 
 ```json5
 {
+  // Enables logging for RTP requests. Useful for checking RTP performance or to figure out why it is failing.
+  "debugLogging": false,
   // Whether using /rtp requires the player to have the permission "fast-rtp.command.root"
   "requirePermission": false,
+  // Whether the /rtpback command should be registered.
+  "rtpBackEnabled": true,
   // Whether /rtp should use the current world of the player. 
   // If false, the default world will be used if the dimension is not specified in the command.
   "useCurrentWorld": false,
@@ -29,9 +33,14 @@ The configuration file can be found in `/config/fast-rtp.json`
   "useStrictTeleportCheck": false,
   // The default dimension to use for /rtp.
   "defaultDimension": "minecraft:overworld",
+  // Redirects RTP's from the "key" dimension to the "value" dimension.
+  // In this example, RTP's triggered in the nether will teleport the player to a random location in the end.
+  "dimensionRedirects": {
+    "minecraft:the_nether": "minecraft:the_end"
+  },
   // The maximum radius from the world center to search for a safe location.
   // If set to -1, the radius will go as far as the worldborder.
-  "radius": -1,
+  "radius": 25000,
   // The minimum radius from the world center to search for a safe location.
   "minRadius": 0,
   // The radius of blocks to check for dangerous surrounding blocks. This doesn't go higher than 4.
@@ -60,11 +69,8 @@ The configuration file can be found in `/config/fast-rtp.json`
     "rtpLocNotFound": "<red>[✖] Could not find a safe location!",
     "rtpOnCooldown": "<red>[✖] <gold>Please wait <yellow>${seconds} <gold>seconds before using the RTP again!",
     "preventedRtp": "<red>[✖] Could not start random teleport.\nReason: ${reason}",
-    "rtpBackSuccess": "<dark_aqua>Teleported back to your last random teleport!",
     "rtpBackLocNotFound": "<red>[✖] You don't have any recent random teleports.",
-    "preventedRtpBack": "<red>[✖] Unable to teleport back to your last RTP location.\nReason: ${reason}",
-    "tpSecondsLeft": "<yellow>Teleporting in ${seconds} seconds...",
-    "tpCancelled": "<red>[✖] Teleportation was cancelled."
+    "preventedRtpBack": "<red>[✖] Unable to teleport back to your last RTP location.\nReason: ${reason}"
   }
 }
 ```
