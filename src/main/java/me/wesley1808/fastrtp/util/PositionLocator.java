@@ -155,7 +155,7 @@ public final class PositionLocator {
     private Vec3 findSafePositionInChunk(LevelChunk chunk) {
         int centerX = chunk.getPos().getMiddleBlockX();
         int centerZ = chunk.getPos().getMiddleBlockZ();
-        int negativeDiff = 8 - Mth.clamp(Config.instance().safetyCheckRadius, 1, MAX_SAFETY_CHECK_RADIUS);
+        int negativeDiff = 8 - Math.clamp(Config.instance().safetyCheckRadius, 1, MAX_SAFETY_CHECK_RADIUS);
         int positiveDiff = negativeDiff - 1;
 
         for (int x = centerX - negativeDiff; x <= centerX + positiveDiff; x++) {

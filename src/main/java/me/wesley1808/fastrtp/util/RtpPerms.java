@@ -1,6 +1,5 @@
 package me.wesley1808.fastrtp.util;
 
-import net.fabricmc.fabric.api.permission.v1.PermissionContextOwner;
 import net.fabricmc.fabric.api.permission.v1.PermissionPredicates;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.resources.Identifier;
@@ -25,9 +24,5 @@ public final class RtpPerms {
 
     public static Predicate<CommandSourceStack> require(Identifier permission, boolean defaultValue) {
         return PermissionPredicates.require(permission, defaultValue);
-    }
-
-    public static boolean check(PermissionContextOwner owner, Identifier permission, PermissionLevel level) {
-        return owner.checkPermission(permission, level);
     }
 }

@@ -22,8 +22,6 @@ The configuration file can be found in `/config/fast-rtp.json`
 {
   // Enables logging for RTP requests. Useful for checking RTP performance or to figure out why it is failing.
   "debugLogging": false,
-  // Whether using /rtp requires the player to have the permission "fast-rtp.command.root"
-  "requirePermission": false,
   // Whether the /rtpback command should be registered.
   "rtpBackEnabled": true,
   // Whether /rtp should use the current world of the player. 

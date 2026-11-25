@@ -36,7 +36,7 @@ public final class RandomTeleportCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         var root = Commands.literal("rtp")
-                .requires(src -> !Config.instance().requirePermission || RtpPerms.check(src, RtpPerms.COMMAND_RTP, PermissionLevel.GAMEMASTERS))
+                .requires(RtpPerms.require(RtpPerms.COMMAND_RTP, true))
                 .executes(ctx -> execute(ctx.getSource(), Bypass.NONE));
 
         root.then(Commands.literal("reload")

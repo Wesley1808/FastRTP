@@ -15,7 +15,6 @@ import java.util.Set;
 public class Config {
     protected static Config instance = new Config();
     public boolean debugLogging = false;
-    public boolean requirePermission = false;
     public boolean rtpBackEnabled = true;
     public boolean useCurrentWorld = false;
     public boolean useStrictTeleportCheck = false;
