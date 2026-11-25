@@ -21,6 +21,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.IntegerArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -80,22 +81,22 @@ public final class RandomTeleportCommand {
                         bypass
                 ))
 
-                .then(Commands.argument("radius", IntegerArgumentType.integer(0))
+                .then(Commands.argument("radius", IntegerArgument.integer(0))
                         .executes(ctx -> execute(
                                 ctx.getSource(),
                                 EntityArgument.getPlayer(ctx, "player"),
                                 DimensionArgument.getDimension(ctx, "world"),
-                                IntegerArgumentType.getInteger(ctx, "radius"),
+                                IntegerArgument.getInteger(ctx, "radius"),
                                 bypass
                         ))
 
-                        .then(Commands.argument("minRadius", IntegerArgumentType.integer(0))
+                        .then(Commands.argument("minRadius", IntegerArgument.integer(0))
                                 .executes(ctx -> execute(
                                         ctx.getSource(),
                                         EntityArgument.getPlayer(ctx, "player"),
                                         DimensionArgument.getDimension(ctx, "world"),
-                                        IntegerArgumentType.getInteger(ctx, "radius"),
-                                        IntegerArgumentType.getInteger(ctx, "minRadius"),
+                                        IntegerArgument.getInteger(ctx, "radius"),
+                                        IntegerArgument.getInteger(ctx, "minRadius"),
                                         bypass
                                 ))
                         )
